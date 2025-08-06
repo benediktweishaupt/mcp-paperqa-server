@@ -30,7 +30,62 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Vergleichende Analyse von "ground truth" vs. "perceptual quality" Metriken
 **Argumentationsform:** Medienarchäologische Verschiebungsanalyse
 
-#### 1.3. Vom Artefakt zum Narrativ: Methodologie nach Farocki/Paglen
+```mermaid
+
+---
+config:
+  layout: dagre
+---
+flowchart TB
+ subgraph subGraph0["EMPIRISCHER KERN"]
+        A["Test-Bildkorpus<br><br>Sujets noch unklar"]
+        B["HISTORISCH<br>Algorithmische Genealogie<br>von geometrisch zu semantisch<br>SIFT 2004<br>PatchMatch 2009<br>Neural 2020+"]
+        BA["SPEKULATIV<br>Algorithmische Alternativen<br>Spekulative Alternativen<br>Andere Totalitäten<br>Counter-Algorithmen"]
+        C["ARTEFAKTE<br>Pol-Singularitäten<br>Seam-Glitches<br>Ghost Pixels<br>Blend Failures"]
+  end
+ subgraph subGraph1["ANALYTISCHE EBENEN"]
+        D["Patente<br>Wer besitzt die Verfahren?<br>Militär → Zivil Transfer"]
+        E["Code-Archäologie<br>Comments, Commits<br>Design Decisions"]
+        EA["Data-Archäologie<br>Bei AI algorithmen <br>Training sets"]
+        F["Qualitätsstandards<br>PSNR → SSIM → FID<br>Wessen Blick?"]
+        G["Oral History<br>Entwickler-Interviews<br>Warum seamless?"]
+        H["Briefings/Requirements<br>Was sollte gelöst werden?<br>Für wen?"]
+  end
+ subgraph subGraph2["KULTURELLER KONTEXT"]
+        I["Kulturelle Beurteilung des Algorithmus<br><br>Vergleichende bewertung averschiedener algorithmen?"]
+        J["Algorithmische Genealogie des Inpainting<br>Von analog zu digital"]
+        K["Globale Panorama-Geschichte<br>China: Handscrolls<br>Islam: Vogelperspektive<br>West: Zentralperspektive"]
+  end
+    A -- Input für --> B & BA
+    B -- produziert --> C
+    BA -- produziert --> C
+    C -- erklärt durch --> D & E & EA & F & G & H
+    D --> I
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+    J <--> K
+    J --> I
+    K --> I
+    I -- neue Testansätze --> BA
+    style C fill:#ff6b6b, stroke:#c92a2a, stroke-width:4px
+    style I fill:#4ecdc4, stroke:#099268, stroke-width:2px
+    style J fill:#ffe66d, stroke:#fab005, stroke-width:2px
+    style K fill:#ffe66d, stroke:#fab005, stroke-width:2px
+```
+
+## 2. Methodologische Positionierung
+
+#### 2.1. Practice-Based Media Archaeology
+
+**Frage:** Wie kann praktische Algorithmus-Arbeit selbst zur Forschungsmethode werden, die über traditionelle Analyse hinausgeht?
+**These:** Die Rekonstruktion, Modifikation und das gezielte Scheitern-Lassen von Algorithmen ist nicht illustratives Beiwerk, sondern zentraler Erkenntnismodus - jede Code-Zeile wird zur epistemologischen Aussage, jeder Compile-Fehler zum Erkenntnismoment über implizite Annahmen.
+**Literatur:** Candy & Edmonds (2018) "Practice-Based Research", Sullivan (2010) "Art Practice as Research", Ratto (2011) "Critical Making", Smith & Dean (2009) zu practice-based vs. practice-led
+**Technologie:** Systematische Code-Archäologie durch: Git-History-Analyse, Dependency-Tracking, Build-System-Rekonstruktion, Comment-Forensik
+**Argumentationsform:** Materiell-reflexive Wissensgenerierung durch Praxis
+
+#### 2.2. Vom Artefakt zum Narrativ: Methodologie nach Farocki/Paglen
 
 **Frage:** Wie lassen sich minimale technische Details als Eingangspunkte in größere techno-politische Erzählungen nutzen?
 **These:** Jeder Artefakt erzählt drei Geschichten: eine technische (wie), eine symptomatische (warum) und eine kulturelle (was bedeutet das).
@@ -38,13 +93,25 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Entwicklung eines dreistufigen Analyse-Protokolls
 **Argumentationsform:** Mikro-zu-Makro Narrativierung
 
-#### 1.4. Warum Algorithmen, nicht Plattformen? Eine methodologische Positionierung
+#### 2.3. Warum Algorithmen, nicht Plattformen? Eine methodologische Positionierung
 
-"Diese Arbeit fokussiert bewusst auf Algorithmen statt Plattformen aus drei Gründen: Erstens ermöglicht die Open-Source-Natur vieler Computer Vision Algorithmen eine Forschungstiefe, die bei proprietären Plattformen unmöglich wäre. Zweitens werden Plattformen zunehmend zu personalisierten, instabilen Forschungsobjekten - was ich auf Google Street View sehe, unterscheidet sich fundamental von anderen Nutzer\*innen-Erfahrungen. Algorithmen hingegen operieren (noch) als stabile, untersuchbare Objekte. Drittens interessiert mich die operative Ebene der Bildproduktion, nicht ihre Interface-Präsentation. Diese methodische Entscheidung folgt Mackenzie (2017), der argumentiert, dass Algorithmen als 'cognitive infrastructures' verstanden werden müssen, die quer durch verschiedene Plattformen operieren."
+**Frage:** Warum sind Algorithmen für eine medienarchäologische Untersuchung geeignetere Forschungsobjekte als die Plattformen, auf denen sie laufen?
+**These:** Algorithmen operieren als stabile, untersuchbare "cognitive infrastructures" (Mackenzie) quer durch verschiedene Plattformen, während Plattformen zu personalisierten, instabilen und undurchsichtigen Blackboxes geworden sind.
+**Literatur:** Mackenzie (2017) "Machine Learners", Gillespie (2014) "The Relevance of Algorithms", Bucher (2018) "If...Then"
+**Technologie:** Vergleichende Analyse derselben Algorithmen-Implementierung across OpenCV, PIL, ImageMagick, Browser-APIs
+**Argumentationsform:** Pragmatisch-epistemologische Objektwahl
 
-### 2. Theoretischer Rahmen: Operational Images und Code Studies
+#### 2.4. Medienarchäologie durch Code: Vom Lesen zum Schreiben
 
-#### 2.1. Inpainting als Operational Image Process
+**Frage:** Wie erweitert das aktive Schreiben von Code die klassische Medienarchäologie über das bloße "Graben" in technischen Archiven hinaus?
+**These:** Code-Produktion als medienarchäologische Methode ermöglicht ein "Nachvollziehen durch Nachbauen" - historische Implementierungen werden nicht nur analysiert, sondern re-enacted, wodurch verborgene Designentscheidungen und kulturelle Einschreibungen erfahrbar werden.
+**Literatur:** Parikka (2012) "What is Media Archaeology?", Hertz & Parikka (2012) "Zombie Media", Marino (2020) "Critical Code Studies", Ernst (2013) zum "Nachvollzug"
+**Technologie:** Entwicklung eines "Archaeological Coding Toolkit": Version-Control-Archäologie, Deprecated-API-Emulation, Historical-Compiler-Chains
+**Argumentationsform:** Performative Geschichtsschreibung durch technische Re-Enactments
+
+### 3. Theoretischer Rahmen: Operational Images und Code Studies
+
+#### 3.1. Inpainting als Operational Image Process
 
 **Frage:** Wie operationalisiert algorithmische Bildvervollständigung Parikkas Konzept der "Operational Images"?
 **These:** Inpainting-Algorithmen produzieren Bilder die primär operieren (Lücken schließen, Kohärenz herstellen) statt repräsentieren.
@@ -52,7 +119,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Frame-by-frame Analyse von Inpainting-Prozessen als operative Ketten
 **Argumentationsform:** Theorieadaption von militärischen zu zivilen Bildoperationen
 
-#### 2.2. Code als primäre Quelle
+#### 3.2. Code als primäre Quelle
 
 **Frage:** Wie kann Code selbst als historisches Dokument gelesen werden?
 **These:** Comments, Variable Names, Magic Numbers und Git Commits sind kulturelle Artefakte, die Design-Philosophien und implizite Annahmen offenbaren.
@@ -60,7 +127,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Git archaeology, systematische Comment-Analyse, Magic Number Extraktion
 **Argumentationsform:** Code als Text mit kulturellen Einschreibungen
 
-#### 2.3. Alternative Totalitätskonzepte
+#### 3.3. Alternative Totalitätskonzepte
 
 **Frage:** Welche anderen Vorstellungen visueller Vollständigkeit existieren jenseits der westlichen Zentralperspektive?
 **These:** Die Dominanz bestimmter Inpainting-Logiken ist kontingent - andere kulturelle Traditionen böten alternative Modelle.
@@ -68,17 +135,18 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Komparative Analyse verschiedener Vollständigkeitskonzepte
 **Argumentationsform:** Denaturalisierung scheinbar universeller Standards
 
-### 3. Empirischer Kern: Systematische Artefakt-Produktion
+### 4. Empirischer Kern: Systematische Artefakt-Produktion
 
-#### 3.1. Algorithmische Genealogie durch Praxis
+#### 4.1. Algorithmische Genealogie durch Praxis
 
 **Frage:** Wie entwickelten sich Inpainting-Strategien von geometrischen zu statistischen zu generativen Ansätzen?
 **These:** Jede Algorithmen-Generation materialisiert eine spezifische "Ästhetik der Plausibilität" mit charakteristischen Artefakt-Signaturen.
 **Literatur:** Efros & Leung (1999), Criminisi et al. (2004), Barnes et al. (2009), Yu et al. (2019), Rombach et al. (2022)
 **Technologie:** Praktische Rekonstruktion historischer Implementierungen - ein aufwändiger Prozess der Archäologie durch Code
 **Argumentationsform:** Experimentelle Technikgeschichte
+**Notizen:**Hier einen Satz wie: "Diese praktische Rekonstruktion folgt der Methodologie des Critical Making (Ratto 2011), bei der..."
 
-#### 3.2. Strategisches Test-Korpus Design
+#### 4.2. Strategisches Test-Korpus Design
 
 **Frage:** Welche Bilder provozieren die aufschlussreichsten algorithmischen Artefakte?
 **These:** Grenzfälle offenbaren die impliziten Annahmen von Algorithmen über visuelle Kohärenz.
@@ -86,7 +154,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Kuratiertes Set von 30 Testbildern in drei Kategorien: Mathematische Grenzfälle, Kulturelle Edge Cases, Historische Panoramen
 **Argumentationsform:** Experimentelles Design als kritische Praxis
 
-#### 3.3. Pol-Singularitäten als privilegierter Forschungsort
+#### 4.3. Pol-Singularitäten als privilegierter Forschungsort
 
 **Frage:** Was offenbaren mathematische Unmöglichkeitspunkte über algorithmische Vollständigkeitskonzepte?
 **These:** An den Polen müssen Algorithmen ihre "wahre Natur" offenbaren - hier wird die Fiktion der Plausibilität am deutlichsten.
@@ -94,9 +162,9 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Systematische Analyse verschiedener Pol-Behandlungen
 **Narrative Dimension:** Die "terra incognita" der digitalen Kartografie - was füllt die Leere wenn keine Daten existieren?
 
-### 4. Multiple Erklärungsebenen für Artefakt-Analyse
+### 5. Multiple Erklärungsebenen für Artefakt-Analyse
 
-#### 4.1. Patent-Archäologie: Die Ökonomie der Plausibilität
+#### 5.1. Patent-Archäologie: Die Ökonomie der Plausibilität
 
 **Frage:** Wie wanderten Panorama-Algorithmen von militärischen zu zivilen Kontexten?
 **These:** Patent-Geschichte offenbart den Wandel von "Präzision" zu "Plausibilität" als Optimierungsziel.
@@ -104,7 +172,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Analyse von Schlüsselpatenten: US7409105 (2008), US8611654 (2013), US10467739 (2019)
 **Narrative Dimension:** Vom Missile Guidance System zum Instagram Filter - eine Geschichte der Demokratisierung
 
-#### 4.2. Code-Forensik: Eingeschriebene Normalität
+#### 5.2. Code-Forensik: Eingeschriebene Normalität
 
 **Frage:** Welche kulturellen Annahmen materialisieren sich in Default-Werten und Schwellwerten?
 **These:** Magic Numbers sind kulturelle Artefakte - sie definieren was als "normal" oder "plausibel" gilt.
@@ -112,7 +180,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Systematische Extraktion und Analyse von Konstanten in fünf Major Implementations
 **Narrative Dimension:** Die 0.7 Threshold - warum 70% "gut genug" für visuelle Kohärenz wurde
 
-#### 4.3. Standards als Plausibilitäts-Regime
+#### 5.3. Standards als Plausibilitäts-Regime
 
 **Frage:** Wie entwickelten sich Qualitätsmetriken von objektiven zu subjektiven Maßstäben?
 **These:** Der Wandel von PSNR über SSIM zu "perceptual metrics" dokumentiert die Institutionalisierung der Plausibilitäts-Ästhetik.
@@ -120,9 +188,11 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Analyse von Evaluationsmetriken in SIGGRAPH/CVPR Papers 2000-2024
 **Narrative Dimension:** Wenn Maschinen lernen was Menschen "glaubwürdig" finden
 
-### 5. Experimentelle Praxis: Rekonstruktion und Spekulation
+### 6. Experimentelle Praxis: Rekonstruktion und Spekulation
 
-#### 5.1. Phase 1: Forensische Werkzeugentwicklung (Monate 7-12)
+**Notizen:** "Die folgenden Experimente verstehen sich als practice-based research im Sinne von Candy & Edmonds (2018), wobei..."
+
+#### 6.1. Phase 1: Forensische Werkzeugentwicklung (Monate 7-12)
 
 **Frage:** Wie können Inpainting-Artefakte systematisch detektiert und klassifiziert werden?
 **These:** Jeder Algorithmus hinterlässt eine charakteristische "Handschrift" im Frequenzraum und in statistischen Mustern.
@@ -130,7 +200,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Entwicklung eines Analyse-Toolkits mit Fourier-Analyse, Statistical Pattern Detection, Benford's Law Tests
 **Output:** Web-basierter "Inpainting Detector" als öffentliches Tool
 
-#### 5.2. Phase 2: Algorithmische Grenzwertanalyse (Monate 13-24)
+#### 6.2. Phase 2: Algorithmische Grenzwertanalyse (Monate 13-24)
 
 **Frage:** Was offenbaren systematische Edge Cases über die normativen Annahmen von Inpainting-Systemen?
 **These:** An ihren Grenzen müssen Algorithmen ihre Prioritäten offenbaren - wo Heuristiken versagen, werden Design-Entscheidungen sichtbar.
@@ -138,7 +208,7 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 **Technologie:** Kontrollierte Tests mit: 0% Überlappung, 95% Missing Data, Widersprüchlichen Constraints, Impossible Geometries
 **Narrative Dimension:** Die Poetik des Scheiterns - wenn Algorithmen "aufgeben" müssen
 
-#### 5.3. Phase 3: Counter-Inpainting Implementation (Monate 25-30)
+#### 6.3. Phase 3: Counter-Inpainting Implementation (Monate 25-30)
 
 **Frage:** Wie können alternative Vollständigkeitslogiken algorithmisch realisiert werden?
 **These:** Jenseits der "seamlessness" existieren multiple Möglichkeiten mit visuellen Lücken umzugehen.
@@ -150,28 +220,28 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 - "Speculative Completion": Multiple mögliche Füllungen werden gleichzeitig angeboten
   **Output:** "Panoramic Alternatives" Open Source Toolkit
 
-### 6. Erwartete Ergebnisse
+### 7. Erwartete Ergebnisse
 
-#### 6.1. Praktische Outputs
+#### 7.1. Praktische Outputs
 
 - **Panoramic Alternatives Toolkit:** Python/JS Library mit alternativen Inpainting-Ansätzen
 - **Forensic Analyzer:** Web-Tool zur Detektion verschiedener Inpainting-Algorithmen
 - **Artefakt-Archiv:** Dokumentierte Sammlung charakteristischer Artefakte mit Reproduktionscode
 - **Workshop-Materialien:** Für Künstler*innen und Journalist*innen
 
-#### 6.2. Theoretische Beiträge
+#### 7.2. Theoretische Beiträge
 
 - Konzeptualisierung der "Ästhetik der Plausibilität" als neue visuelle Episteme
 - Dokumentierte Methodologie für praxis-basierte Algorithmusforschung
 - Erweiterung der Operational Image Theory auf zivile Kontexte
 
-#### 6.3. Narrative Outputs
+#### 7.3. Narrative Outputs
 
 - Essay: "Die Demokratisierung der Fälschung: Von Staatsgeheimnissen zu Instagram"
 - Web-Installation: "The Plausibility Machine" - interaktive Demonstration
 - Bildband: Artefakt-Atlas mit kritischen Annotationen
 
-### 7. Zeitplan
+### 8. Zeitplan
 
 **Jahr 1: Grundlagen und Rekonstruktion**
 
@@ -191,13 +261,13 @@ Die Dissertation leistet drei Beiträge: (1) Eine dokumentierte Methodologie fü
 - Monate 31-33: Dissertation schreiben
 - Monate 34-36: Ausstellung, Workshops, Defense
 
-### 8. Risikomanagement
+### 9. Risikomanagement
 
 - **Falls historische Implementierungen nicht rekonstruierbar:** Fokus auf gut dokumentierte Open Source Versionen
 - **Falls Forensik-Tools nicht zuverlässig:** Pivot zu qualitativer Artefakt-Analyse
 - **Falls Counter-Algorithmen nicht überzeugend:** Verstärkter Fokus auf kritische Analyse bestehender Systeme
 
-### 9. Zentrale Bibliografie [Auszug]
+### 10. Zentrale Bibliografie [Auszug]
 
 **Theoretischer Rahmen:**
 
