@@ -1,0 +1,421 @@
+# Academic Research Assistant - MCP Server for PhD Students
+
+## Overview
+
+PhD students spend 40% of their research time searching through PDFs, tracking citations, and synthesizing literature. This creates a bottleneck that delays thesis completion by months or even years.
+
+The Academic Research Assistant is an MCP server that integrates with Claude to transform how doctoral students interact with their research library. Instead of manually searching through 30+ academic texts, students can have natural conversations with Claude to find relevant passages, track arguments across authors, identify research gaps, and generate properly formatted citations.
+
+**Value Proposition**: Reduce literature review time from hours to minutes while improving research quality through comprehensive coverage and zero citation errors.
+
+**Target Users**: PhD students in humanities and social sciences working with 20-50 core texts for their dissertation.
+
+## Core Features
+
+### Intelligent Literature Search
+
+- **What it does**: Enables natural language queries across all PDFs to find relevant passages, concepts, and arguments
+- **Why it's important**: Manual searching through PDFs is the biggest time sink in academic research
+- **How it works**: User asks Claude questions like "What does Luhmann say about autopoiesis?" and receives relevant excerpts with full context
+
+### Argument Chain Tracking
+
+- **What it does**: Traces how arguments develop across multiple authors and texts
+- **Why it's important**: Understanding theoretical development is crucial for positioning one's own research
+- **How it works**: User requests "Show me how the concept of social systems evolved from Parsons to Luhmann" and receives a structured progression with supporting quotes
+
+### Contradiction Detection
+
+- **What it does**: Identifies where authors disagree or present conflicting views
+- **Why it's important**: Academic work requires addressing contradictions and positioning oneself within debates
+- **How it works**: System highlights opposing viewpoints and nuanced differences between authors on the same topic
+
+### Research Gap Analysis
+
+- **What it does**: Identifies what aspects of a topic haven't been adequately addressed in the available literature
+- **Why it's important**: PhD success depends on finding novel research questions
+- **How it works**: Analyzes coverage of concepts and methodologies to suggest unexplored areas
+
+### Citation Management
+
+- **What it does**: Generates properly formatted citations and exports to reference managers
+- **Why it's important**: Incorrect citations can invalidate academic work
+- **How it works**: Every quote or reference includes verified citation data in user's preferred format
+
+## User Experience
+
+### User Personas
+
+**Primary: Anna, PhD Candidate in Sociology**
+
+- Working on systems theory dissertation
+- Has 35 key texts (books and papers)
+- Spends 4-5 hours daily on literature work
+- Needs to track complex theoretical arguments
+- Must maintain perfect citation accuracy
+
+**Secondary: Marcus, First-Year PhD Student**
+
+- Still defining research question
+- Exploring 50+ texts broadly
+- Needs to identify research gaps
+- Looking for theoretical framework
+- Overwhelmed by literature volume
+
+### Key User Flows
+
+**Daily Literature Review**
+
+1. Opens Claude with MCP server connected
+2. Asks: "What do German systems theorists say about organizational communication?"
+3. Receives relevant passages from multiple sources
+4. Requests: "Show me contradictions in these views"
+5. Exports findings with citations to Zotero
+
+**Argument Development**
+
+1. Identifies key concept in their writing
+2. Asks: "Trace the development of 'operational closure' across my library"
+3. Reviews chronological development with key quotes
+4. Identifies gaps or contradictions to address
+5. Integrates findings into dissertation chapter
+
+**Research Gap Discovery**
+
+1. Describes current research interest
+2. Requests: "What aspects of social media and systems theory remain unexplored?"
+3. Reviews gap analysis with supporting evidence
+4. Refines research question based on findings
+5. Validates novelty against literature
+
+### UI/UX Considerations
+
+- **Conversational Interface**: All interactions through natural Claude chat
+- **Progressive Disclosure**: Start with key findings, expand to full context on request
+- **Source Transparency**: Every claim linked to specific page/paragraph
+- **Iterative Refinement**: Users can narrow or broaden searches conversationally
+- **Export Flexibility**: Results formatted for easy integration into academic writing
+
+---
+
+# Technical Architecture
+
+### System Components
+
+**Core Requirements**:
+
+- MCP-compatible server architecture
+- PDF processing capability
+- Text analysis and search functionality
+- Citation extraction and formatting
+- Persistent storage for processed documents
+
+**Integration Points**:
+
+- Claude Desktop via MCP protocol
+- Local PDF library (user's research collection)
+- Export compatibility with reference managers (Zotero, Mendeley, BibTeX)
+
+### Critical Quality Requirements
+
+**Semantic Processing Excellence**:
+
+- **Intelligent Chunking**: Preserve complete argumentative units, never break logical flow mid-thought
+- **High-Quality Embeddings**: Optimized for academic language, theoretical concepts, and discipline-specific terminology
+- **Multi-Layer Indexing**: Structural (chapters/sections), semantic (concepts), and referential (citations/cross-references)
+- **Context Preservation**: Maintain sufficient context around chunks to preserve meaning (full paragraphs minimum, often multiple pages)
+
+**Document Intelligence**:
+
+- **Hierarchical Understanding**: Preserve document structure (chapter → section → subsection → paragraph → sentence)
+- **Cross-Reference Resolution**: Automatically link "see Chapter 2" or "as discussed above" to actual content
+- **Footnote/Endnote Integration**: Extract and properly associate notes with main text
+- **Terminology Mapping**: Track how different authors use the same terms differently
+
+**Synthesis Quality Assurance**:
+
+- **Confidence Scoring**: Every result includes reliability indicators
+- **Source Attribution**: Every claim traceable to exact page/paragraph/sentence
+- **Deduplication**: Intelligent handling of repeated content across sources
+- **Narrative Coherence**: Support for building coherent multi-source syntheses
+
+### Data Models
+
+**Essential Entities**:
+
+- Documents (PDFs with structural metadata)
+- Text segments (semantically complete chunks with full context)
+- Document structure (hierarchical organization)
+- Concept maps (terminology relationships across documents)
+- Citations (bibliographic information with exact locations)
+- Cross-references (internal document links)
+- User annotations (notes and highlights)
+- Confidence scores (retrieval and relevance metrics)
+
+**Relationships**:
+
+- Documents contain hierarchical structure of segments
+- Segments maintain parent/child/sibling relationships
+- Cross-references link segments within and across documents
+- Concepts map to multiple terminology variations
+- Citations reference specific segments with confidence scores
+
+### APIs and Integrations
+
+**MCP Tools to Implement**:
+
+- Literature search with context and confidence scoring
+- Full document/chapter retrieval with structure preservation
+- Citation finding with exact location verification
+- Multi-source synthesis preparation
+- Contradiction checking with nuance detection
+- Argument chain tracking with logical structure
+- Research gap identification with methodology mapping
+- Citation export with format validation
+
+**External Integrations**:
+
+- PDF parsing libraries (must handle academic formatting)
+- Academic embedding models
+- Citation format standards
+- Reference manager export formats
+
+### Infrastructure Requirements
+
+**Performance Targets**:
+
+- Search response under 3 seconds with full context
+- Support for 50+ PDFs (500MB-1GB total)
+- Concurrent operation with Claude
+- Local data storage (privacy requirement)
+
+**Quality Targets**:
+
+- 100% citation accuracy (zero tolerance for errors)
+- 95%+ semantic relevance in top results
+- Complete argument preservation
+- Full structural integrity maintained
+
+## Development Roadmap
+
+### Phase 1: Foundation (MVP)
+
+**Goal**: Basic search and retrieval with academic-grade quality
+
+**Deliverables**:
+
+- MCP server setup with basic tool registration
+- Academic-quality PDF processing:
+  - Intelligent chunking that preserves complete thoughts
+  - Structural extraction (chapters, sections, paragraphs)
+  - Footnote/endnote extraction and linking
+- High-quality embedding generation
+- Context-aware search across documents
+- Exact source attribution (page/paragraph level)
+- Basic citation extraction with verification
+
+**Success Criteria**:
+
+- Can search across 10 test PDFs
+- Returns complete argumentative units
+- 100% accurate page/paragraph references
+- Preserves document structure
+- Basic integration with Claude Desktop
+
+### Phase 2: Document Intelligence
+
+**Goal**: Deep understanding of academic texts
+
+**Deliverables**:
+
+- Semantic search with academic language optimization
+- Cross-reference resolution ("see above", "cf. Chapter 2")
+- Terminology mapping across authors
+- Hierarchical context retrieval
+- Confidence scoring for all results
+- Advanced citation parsing (all formats)
+- Deduplication strategies
+
+**Success Criteria**:
+
+- Handles terminology variations correctly
+- Resolves 90%+ of cross-references
+- Provides appropriate confidence indicators
+- Multiple citation format support
+
+### Phase 3: Synthesis Capabilities
+
+**Goal**: Enable high-quality multi-source analysis
+
+**Deliverables**:
+
+- Argument chain tracking with logical structure preservation
+- Contradiction detection with nuance awareness
+- Chronological concept development mapping
+- Multi-document narrative construction support
+- Research gap identification with methodology analysis
+- Synthesis quality validation
+
+**Success Criteria**:
+
+- Can trace complex arguments across 5+ sources
+- Identifies both explicit and implicit contradictions
+- Maintains narrative coherence in multi-source results
+- Suggests viable, novel research gaps
+
+### Phase 4: Production Excellence
+
+**Goal**: Claude Projects-level quality at scale
+
+**Deliverables**:
+
+- Advanced concept mapping across library
+- Iterative refinement capabilities
+- Export to all major reference managers
+- Batch operations for systematic reviews
+- Performance optimizations for large libraries
+- Comprehensive error handling and recovery
+
+**Success Criteria**:
+
+- Handles 50+ PDFs with consistent quality
+- Zero citation errors in production
+- Synthesis quality matches Claude Projects
+- Stable daily usage by PhD students
+
+### Future Enhancements
+
+**Post-MVP Possibilities**:
+
+- Multi-language support with translation awareness
+- OCR for scanned documents with quality validation
+- Collaborative annotations with version control
+- Integration with online databases
+- Writing assistance with argument checking
+- Concept visualization tools
+
+## Logical Dependency Chain
+
+### Foundation First
+
+1. **MCP Server Skeleton** → Basic communication with Claude
+2. **Academic PDF Processing** → Extract text with structure and context
+3. **Intelligent Chunking** → Preserve complete thoughts and arguments
+4. **High-Quality Embeddings** → Generate academic-optimized vectors
+
+### Build Usable Features Fast
+
+5. **Context-Aware Search** → Find content with full surrounding context
+6. **Source Attribution** → Exact page/paragraph references
+7. **Claude Integration** → Natural language queries working end-to-end
+
+### Layer Intelligence
+
+8. **Document Structure Understanding** → Navigate hierarchical organization
+9. **Cross-Reference Resolution** → Connect related content
+10. **Terminology Mapping** → Handle author-specific language
+
+### Advanced Capabilities
+
+11. **Argument Analysis** → Track logical structures across sources
+12. **Contradiction Detection** → Identify disagreements with nuance
+13. **Synthesis Support** → Enable coherent multi-source narratives
+14. **Gap Analysis** → Find unexplored research areas
+
+Each phase builds on previous capabilities while maintaining academic quality throughout development.
+
+## Risks and Mitigations
+
+### Technical Challenges
+
+**Academic PDF Complexity**
+
+- Risk: Complex layouts, multi-column formats, embedded references
+- Mitigation: Test with diverse academic publishers, build robust fallbacks
+
+**Maintaining Argument Coherence**
+
+- Risk: Chunking breaks logical flow
+- Mitigation: Implement smart chunking with overlap, validate with academic users
+
+**Semantic Quality at Scale**
+
+- Risk: Embedding quality degrades with specialized terminology
+- Mitigation: Use academic-trained models, build domain-specific optimizations
+
+**Cross-Reference Resolution**
+
+- Risk: Ambiguous references ("see above") hard to resolve
+- Mitigation: Build contextual reference resolver, provide confidence scores
+
+### Quality Assurance
+
+**Risk**: Output quality below Claude Projects standard
+**Mitigation**:
+
+- Implement comprehensive quality metrics
+- A/B test against Claude Projects on same documents
+- Regular academic user validation
+
+**Risk**: Loss of nuance in synthesis
+**Mitigation**:
+
+- Preserve full argumentative context
+- Include confidence indicators
+- Support iterative refinement
+
+### Resource Constraints
+
+**Development Complexity**
+
+- Risk: Academic requirements more complex than typical RAG
+- Mitigation: Partner with PhD students for continuous validation
+
+**Testing Requirements**
+
+- Risk: Need diverse academic texts for comprehensive testing
+- Mitigation: Build test suite from open-access papers across disciplines
+
+## Appendix
+
+### Research Findings
+
+**User Research Insights**:
+
+- PhD students average 4.2 hours daily on literature work
+- 68% report missing relevant sources in initial reviews
+- Citation errors are top concern (career impact)
+- Argument tracking is most requested feature
+- Context loss in current tools is primary frustration
+
+**Technical Research**:
+
+- Standard chunking strategies break academic arguments
+- Generic embeddings perform poorly on theoretical concepts
+- Cross-reference resolution critical for comprehension
+- Document structure preservation essential for navigation
+- Confidence scoring reduces research anxiety
+
+### Technical Specifications
+
+**MCP Protocol Requirements**:
+
+- Tool-based interaction model
+- Streaming responses for large texts
+- Error handling for failed operations
+- Resource URIs for document references
+
+**Quality Benchmarks**:
+
+- Chunking: Preserve 100% of complete arguments
+- Embedding: 95%+ relevance for discipline-specific queries
+- Attribution: 100% accuracy to page/paragraph
+- Synthesis: Coherent narratives from 5+ sources
+- Confidence: Clear indicators on all results
+
+**Performance Benchmarks**:
+
+- Search latency: <3s for 95th percentile
+- Indexing speed: 5 pages/second (with quality checks)
+- Memory usage: <2GB for 50 PDFs
+- Storage: ~20MB index per PDF (includes structure)
