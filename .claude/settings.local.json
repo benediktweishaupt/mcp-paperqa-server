@@ -6,8 +6,36 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__task-master-ai__initialize_project",
+      "mcp__task-master-ai__parse_prd",
+      "Bash(task-master analyze-complexity:*)",
+      "Bash(task-master list:*)",
+      "Bash(task-master expand:*)",
+      "mcp__task-master-ai__next_task",
+      "mcp__task-master-ai__set_task_status",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:*)",
+      "mcp__task-master-ai__update_subtask",
+      "Bash(task-master update-subtask:*)",
+      "mcp__task-master-ai__get_task",
+      "Bash(npm test:*)",
+      "Bash(grep:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(task-master show:*)",
+      "Bash(task-master set-status:*)",
+      "Bash(task-master:*)",
+      "Bash(find:*)"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "task-master-ai"
+  ]
 }
