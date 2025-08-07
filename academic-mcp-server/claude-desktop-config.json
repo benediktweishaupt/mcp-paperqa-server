@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "academic-research-assistant": {
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "cwd": "/Users/benediktw/Documents/gitHub/academic-mcp-server/academic-mcp-server",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

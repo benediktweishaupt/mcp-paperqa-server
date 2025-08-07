@@ -44,7 +44,7 @@ describe('AcademicMCPServer', () => {
       const state = server.getState();
       expect(state.isRunning).toBe(false);
       expect(state.connections.size).toBe(0);
-      expect(state.registeredTools.size).toBe(0);
+      expect(state.registeredTools.size).toBe(1); // health_check tool is registered by default
       expect(state.startTime).toBeInstanceOf(Date);
     });
   });

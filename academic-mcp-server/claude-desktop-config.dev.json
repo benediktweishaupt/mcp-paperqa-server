@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "academic-research-assistant": {
+      "command": "npm",
+      "args": ["run", "dev"],
+      "cwd": "/Users/benediktw/Documents/gitHub/academic-mcp-server/academic-mcp-server",
+      "env": {
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}

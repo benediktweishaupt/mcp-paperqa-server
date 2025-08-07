@@ -10,10 +10,17 @@
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:unit": "jest tests/tools tests/errors tests/logging tests/protocol tests/middleware",
+    "test:integration": "jest tests/integration",
+    "test:mcp": "node scripts/test-mcp-integration.js",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
     "lint": "eslint src/ --ext .ts",
     "lint:fix": "eslint src/ --ext .ts --fix",
     "format": "prettier --write src/",
-    "clean": "rm -rf dist/"
+    "clean": "rm -rf dist/",
+    "mcp:start": "./scripts/start-mcp-server.sh",
+    "mcp:config": "echo 'Copy claude-desktop-config.json to ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)'"
   },
   "keywords": [
     "mcp",
@@ -30,11 +37,14 @@
     "@types/node": "^24.2.0",
     "express": "^5.1.0",
     "typescript": "^5.9.2",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
+    "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
