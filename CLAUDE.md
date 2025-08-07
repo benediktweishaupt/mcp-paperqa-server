@@ -17,7 +17,7 @@ Academic Research Assistant - An MCP server for PhD students to interact with th
 - **Primary Language**: Python (for PDF processing, embeddings, search)
 - **Secondary Language**: TypeScript/JavaScript (for MCP protocol implementation)
 - **Framework**: MCP (Model Context Protocol) server architecture
-- **Key Libraries**: 
+- **Key Libraries**:
   - PDF processing: PyMuPDF, pdfplumber
   - Embeddings: sentence-transformers, openai
   - Vector search: FAISS, ChromaDB
@@ -25,57 +25,74 @@ Academic Research Assistant - An MCP server for PhD students to interact with th
 - **Testing**: pytest for Python components
 - **Code Style**: Black for Python, Prettier for JS/TS
 
-## Core Features to Implement
+## Git
 
-1. **Intelligent Literature Search** - Natural language queries across PDF library
-2. **Argument Chain Tracking** - Trace theoretical development across sources
-3. **Contradiction Detection** - Identify disagreements between authors
-4. **Research Gap Analysis** - Find unexplored areas in literature
-5. **Citation Management** - Generate properly formatted citations
+- when starting a new subtask create a new git feature branch.
+- commit each subtask step when it makes sense.
+- commit often.
 
-## Technical Architecture
+## CLAUDE.md improvement Triggers
 
-**MCP Tools to Implement:**
-- Literature search with context and confidence scoring
-- Full document/chapter retrieval with structure preservation
-- Citation finding with exact location verification
-- Multi-source synthesis preparation
-- Contradiction checking with nuance detection
-- Argument chain tracking with logical structure
-- Research gap identification
-- Citation export with format validation
+- **When to improve this claude.md Rule Document Triggers:**
+  - New code patterns not covered by existing rules
+  - Repeated similar implementations across files
+  - Common error patterns that could be prevented
+  - New libraries or tools being used consistently
+  - Emerging best practices in the codebase
 
-**Quality Requirements:**
-- 100% citation accuracy (zero tolerance for errors)
-- Intelligent chunking that preserves complete argumentative units
-- High-quality embeddings optimized for academic language
-- Context preservation around chunks (full paragraphs minimum)
-- Hierarchical document understanding
+## MCP Servers
+
+- **Task Master**:
+
+  - If you want to call taskmaster use ´task-master´ as command
+  - Task master is installed globally
+
+- **Context7**:
+  - if you look up Doumentation use context7 MCP
+  - use context7 to reliably check for the right version of Documentation
 
 ## Code Standards
 
-- Prioritize academic-grade quality over speed
-- Every result must include exact source attribution (page/paragraph)
-- Preserve document structure and cross-references
-- Include confidence scoring for all operations
-- Handle academic PDF complexity (multi-column, footnotes, references)
-- Document both implementation and academic rationale
+- Use Python and TypeScript/JavaScript Best Practices
+- Test coverage minimum 80%
+- Document complex logic
+- Use English for Variable Names and Comments
+- Use meaningful variable/function names
+- Document all public APIs
+- Handle errors gracefully
 
-## Development Phases
+- **Analysis Process:**
+  - Compare new code with existing rules
+  - Identify patterns that should be standardized
+  - Look for references to external documentation
+  - Check for consistent error handling patterns
 
-1. **Phase 1**: MCP server setup + basic PDF processing + search
-2. **Phase 2**: Document intelligence + cross-reference resolution
-3. **Phase 3**: Synthesis capabilities + argument tracking
-4. **Phase 4**: Production quality + scale optimization
+## Architecture Principles
+
+- Keep it simple (KISS)
+- Don't repeat yourself (DRY)
+- Single responsibility principle
 
 ## Special Instructions
 
-- Test with diverse academic PDFs from different publishers
-- Validate chunking preserves complete thoughts/arguments
-- Academic terminology requires specialized embedding approaches
-- Cross-reference resolution ("see Chapter 2") is critical
-- All features must integrate seamlessly with Claude conversation flow
+- Ask when requirements are unclear
+- Implement error handling
+- Consider performance implications
+- Use modern language features
+
+## Special Instructions
+
+- Ask for clarification when requirements are ambiguous
+- Consider performance implications
+- Think about edge cases
+- Validate inputs
+- Log important operations
 
 ## Context Files
 
 @academic-mcp-server/prd.md - Complete technical specification and requirements
+
+## Task Master AI Instructions
+
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
