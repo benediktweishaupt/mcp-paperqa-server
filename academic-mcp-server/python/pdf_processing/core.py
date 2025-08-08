@@ -11,6 +11,7 @@ from enum import Enum
 from .extractors import BaseExtractor, PyMuPDFExtractor, PDFPlumberExtractor
 from .models import Document, Metadata, Section, Paragraph, Heading, Table
 from .config import ProcessorConfig, PublisherProfile, PublisherType, get_academic_config
+from .layout import LayoutAnalyzer, PageLayout, LayoutType
 
 
 class ExtractionMethod(Enum):
@@ -55,12 +56,24 @@ class PDFProcessor:
         self.extractors: Dict[str, BaseExtractor] = {}
         self._initialize_extractors()
         
+        # Initialize layout analyzer
+        layout_config = {
+            'column_detection': self.config.to_dict().get('column_detection', {}),
+            'reading_order': self.config.to_dict().get('reading_order', {}),
+        }
+        self.layout_analyzer = LayoutAnalyzer(layout_config)
+        
         # Processing statistics
         self.stats = {
             'total_processed': 0,
             'successful_extractions': 0,
             'failed_extractions': 0,
             'extraction_methods': {},
+            'layout_analysis': {
+                'pages_analyzed': 0,
+                'mixed_layouts_detected': 0,
+                'average_confidence': 0.0
+            },
         }
     
     def _initialize_extractors(self):
@@ -259,6 +272,17 @@ class PDFProcessor:
     def _enhance_document(self, document: Document) -> Document:
         """Apply post-processing enhancements to the document"""
         
+        # Advanced layout analysis
+        page_layouts = self.layout_analyzer.analyze_document_layout(document)
+        
+        # Apply layout-based improvements
+        if page_layouts:
+            document = self._apply_layout_improvements(document, page_layouts)
+            
+            # Update statistics
+            layout_stats = self.layout_analyzer.get_layout_statistics(page_layouts)
+            self._update_layout_stats(layout_stats)
+        
         # Cross-reference resolution
         if self.config.extraction.extract_footnotes:
             document = self._resolve_cross_references(document)
@@ -339,6 +363,86 @@ class PDFProcessor:
             score += 0.1
         
         return max(0.0, min(1.0, score))
+    
+    def _apply_layout_improvements(self, document: Document, page_layouts: List[PageLayout]) -> Document:
+        """Apply layout-based improvements to document structure"""
+        
+        # Reorganize sections based on layout analysis
+        if page_layouts:
+            # Check for mixed layouts and adjust section boundaries
+            for layout in page_layouts:
+                if layout.column_layout.is_mixed_layout():
+                    self._handle_mixed_layout_sections(document, layout)
+            
+            # Improve reading order within sections
+            document.sections = self._reorder_sections_by_layout(document.sections, page_layouts)
+        
+        return document
+    
+    def _handle_mixed_layout_sections(self, document: Document, layout: PageLayout):
+        """Handle sections in mixed layout pages (abstract + columns)"""
+        
+        # Find sections on this page
+        page_sections = [s for s in document.sections if s.page_start <= layout.page_number <= s.page_end]
+        
+        for section in page_sections:
+            # Reorder content within section based on layout analysis
+            layout_elements = layout.get_elements_by_role('body')
+            
+            if layout_elements:
+                # Sort section content by layout reading order
+                section.content.sort(key=lambda x: self._get_element_layout_order(x, layout_elements))
+    
+    def _get_element_layout_order(self, content_element, layout_elements) -> int:
+        """Get the reading order index for a content element"""
+        
+        # Match content element to layout element by position/content similarity
+        for layout_elem in layout_elements:
+            if (hasattr(content_element, 'content') and 
+                content_element.content == layout_elem.content):
+                return layout_elem.reading_order_index
+        
+        return 999999  # Put unmatched elements at end
+    
+    def _reorder_sections_by_layout(self, sections: List[Section], page_layouts: List[PageLayout]) -> List[Section]:
+        """Reorder sections based on layout analysis"""
+        
+        # This is a simplified implementation
+        # A more sophisticated version would use the reading order from layout analysis
+        
+        # Group sections by page
+        page_sections = {}
+        for section in sections:
+            for page_num in range(section.page_start, section.page_end + 1):
+                if page_num not in page_sections:
+                    page_sections[page_num] = []
+                page_sections[page_num].append(section)
+        
+        # Reorder sections within each page based on layout
+        reordered_sections = []
+        processed_sections = set()
+        
+        for layout in sorted(page_layouts, key=lambda x: x.page_number):
+            page_sects = page_sections.get(layout.page_number, [])
+            
+            for section in page_sects:
+                if id(section) not in processed_sections:
+                    reordered_sections.append(section)
+                    processed_sections.add(id(section))
+        
+        # Add any remaining sections
+        for section in sections:
+            if id(section) not in processed_sections:
+                reordered_sections.append(section)
+        
+        return reordered_sections
+    
+    def _update_layout_stats(self, layout_stats: Dict[str, Any]):
+        """Update processing statistics with layout analysis results"""
+        
+        self.stats['layout_analysis']['pages_analyzed'] = layout_stats.get('total_pages', 0)
+        self.stats['layout_analysis']['mixed_layouts_detected'] = layout_stats.get('pages_with_mixed_layout', 0)
+        self.stats['layout_analysis']['average_confidence'] = layout_stats.get('average_confidence', 0.0)
     
     def process_multiple_pdfs(self, pdf_paths: List[str], 
                              extraction_method: ExtractionMethod = ExtractionMethod.AUTO) -> List[ProcessingResult]:

@@ -9,6 +9,7 @@ from .core import PDFProcessor, process_single_pdf, detect_publisher_from_pdf, E
 from .models import Document, Section, Paragraph, Metadata, Heading, Table, Reference
 from .config import ProcessorConfig, PublisherProfile, PublisherType, get_academic_config, get_default_config
 from .extractors import BaseExtractor, PyMuPDFExtractor, PDFPlumberExtractor
+from .layout import LayoutAnalyzer, PageLayout, LayoutType, ColumnDetector, ColumnLayout, ReadingOrderProcessor
 
 __version__ = "0.1.0"
 __author__ = "Academic MCP Server Team"
@@ -43,4 +44,12 @@ __all__ = [
     "BaseExtractor",
     "PyMuPDFExtractor", 
     "PDFPlumberExtractor",
+    
+    # Layout Analysis
+    "LayoutAnalyzer",
+    "PageLayout",
+    "LayoutType",
+    "ColumnDetector",
+    "ColumnLayout",
+    "ReadingOrderProcessor",
 ]

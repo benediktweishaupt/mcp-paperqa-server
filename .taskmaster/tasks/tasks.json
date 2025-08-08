@@ -128,7 +128,7 @@
               "2.2"
             ],
             "details": "Implement column detection using geometric analysis of text blocks. Create column merging logic that maintains proper reading order. Handle varying column widths and irregular layouts common in academic papers. Support single-column abstracts transitioning to two-column body text. Implement column-spanning elements like figures and tables.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -558,7 +558,7 @@
     ],
     "metadata": {
       "created": "2025-08-06T21:13:56.215Z",
-      "updated": "2025-08-07T20:53:43.406Z",
+      "updated": "2025-08-08T06:15:20.583Z",
       "description": "Tasks for master context"
     }
   }
