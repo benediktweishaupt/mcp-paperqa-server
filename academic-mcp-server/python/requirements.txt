@@ -14,6 +14,7 @@ numpy>=1.24.0                 # Numerical operations
 # Language Processing
 nltk>=3.8                     # Natural language processing utilities
 spacy>=3.7.0                  # Advanced NLP for academic text analysis
+sentence-transformers>=2.2.0  # Semantic embeddings for academic text
 
 # Character Encoding & Text Processing
 chardet>=5.2.0                # Character encoding detection

@@ -24,7 +24,9 @@
             "id": 2,
             "title": "MCP Server Class Implementation",
             "description": "Create core server class with proper initialization and lifecycle management following MCP specifications",
-            "dependencies": ["1.1"],
+            "dependencies": [
+              "1.1"
+            ],
             "details": "Create server.ts with MCPServer class extending SDK base. Implement constructor with ServerOptions configuration. Set up server initialization with proper event handling (onConnect, onDisconnect, onError). Implement graceful shutdown procedures with cleanup handlers. Create server state management for active connections and registered tools. Implement health check endpoint for monitoring. Configure port binding and WebSocket upgrade handling.\n<info added on 2025-08-07T08:01:23.814Z>\nImplementation completed successfully with AcademicMCPServer class featuring full MCP protocol compliance, comprehensive lifecycle management, robust event handling system, tool registration framework, health monitoring capabilities, graceful shutdown procedures, connection state management, and complete test coverage. Server ready for academic PDF processing integration and Claude Desktop deployment.\n</info added on 2025-08-07T08:01:23.814Z>",
             "status": "done",
             "testStrategy": ""
@@ -33,7 +35,9 @@
             "id": 3,
             "title": "Tool Registration Framework",
             "description": "Design and implement flexible tool registration system for dynamic MCP tool management",
-            "dependencies": ["1.2"],
+            "dependencies": [
+              "1.2"
+            ],
             "details": "Create ToolRegistry class for managing tool lifecycle. Implement tool interface with name, description, parameters schema, and handler function. Build dynamic tool registration with runtime validation. Create tool discovery mechanism for Claude Desktop. Implement tool versioning and backward compatibility support. Add tool permission system for security. Create tool metadata storage for descriptions and schemas.",
             "status": "done",
             "testStrategy": ""
@@ -42,7 +46,9 @@
             "id": 4,
             "title": "MCP Communication Protocol Setup",
             "description": "Implement MCP protocol communication layer with proper request/response handling",
-            "dependencies": ["1.3"],
+            "dependencies": [
+              "1.3"
+            ],
             "details": "Implement JSON-RPC 2.0 protocol handling for MCP communication. Create request router for tool invocations. Implement response serialization with proper MCP formatting. Set up bidirectional streaming for large responses. Handle protocol version negotiation and capability exchange. Implement request validation and sanitization. Create message queue for concurrent request handling.",
             "status": "done",
             "testStrategy": ""
@@ -51,7 +57,9 @@
             "id": 5,
             "title": "Error Handling and Logging Infrastructure",
             "description": "Build comprehensive error handling and structured logging system for debugging and monitoring",
-            "dependencies": ["1.4"],
+            "dependencies": [
+              "1.4"
+            ],
             "details": "Implement custom error classes for different failure scenarios. Create error middleware with proper MCP error responses. Set up Winston logger with structured logging format. Implement log levels (debug, info, warn, error) with environment-based configuration. Create request/response logging with correlation IDs. Add performance metrics logging for monitoring. Implement error recovery strategies and circuit breakers.",
             "status": "done",
             "testStrategy": ""
@@ -60,7 +68,9 @@
             "id": 6,
             "title": "Claude Desktop Integration Configuration",
             "description": "Configure MCP server for seamless Claude Desktop integration with proper manifest and settings",
-            "dependencies": ["1.5"],
+            "dependencies": [
+              "1.5"
+            ],
             "details": "Create claude_mcp_config.json with server metadata and capabilities. Configure authentication if required by Claude Desktop. Set up development and production environment configurations. Create installation script for Claude Desktop registration. Document configuration options and environment variables. Implement configuration validation on startup. Create troubleshooting guide for common integration issues.",
             "status": "done",
             "testStrategy": ""
@@ -69,7 +79,9 @@
             "id": 7,
             "title": "Testing Infrastructure Setup",
             "description": "Establish comprehensive testing framework for unit and integration tests with MCP protocol validation",
-            "dependencies": ["1.6"],
+            "dependencies": [
+              "1.6"
+            ],
             "details": "Set up Jest with TypeScript support for unit testing. Create test utilities for mocking MCP connections and tool calls. Implement integration tests for full server lifecycle. Create protocol compliance tests against MCP specification. Set up test fixtures for various request/response scenarios. Implement load testing for concurrent connections. Configure GitHub Actions for CI/CD with test automation.",
             "status": "done",
             "testStrategy": ""
@@ -83,7 +95,9 @@
         "details": "Use PyMuPDF and pdfplumber for PDF processing. Extract text while preserving document structure (chapters, sections, paragraphs). Handle multi-column layouts, embedded references, footnotes, and academic publisher formats. Implement fallback strategies for complex layouts. Extract metadata including title, authors, publication info. Create Document class with hierarchical structure representation. Handle encoding issues and special characters common in academic texts.",
         "testStrategy": "Test with diverse academic PDFs from different publishers (IEEE, ACM, Springer, etc.). Verify structure preservation, text quality, and metadata extraction accuracy. Performance tests with large documents.",
         "priority": "high",
-        "dependencies": [1],
+        "dependencies": [
+          1
+        ],
         "status": "in-progress",
         "subtasks": [
           {
@@ -99,7 +113,9 @@
             "id": 2,
             "title": "Text extraction with layout preservation",
             "description": "Implement core text extraction logic that maintains document structure and formatting integrity",
-            "dependencies": ["2.1"],
+            "dependencies": [
+              "2.1"
+            ],
             "details": "Create PDFExtractor class using PyMuPDF as primary extractor with pdfplumber fallback. Implement text extraction methods that preserve paragraph boundaries, maintain reading order, and handle text reflow. Extract text blocks with positional information for later structural analysis. Handle rotated pages and scanned content detection.",
             "status": "done",
             "testStrategy": ""
@@ -108,7 +124,9 @@
             "id": 3,
             "title": "Multi-column layout handling",
             "description": "Develop algorithms to detect and properly extract text from multi-column academic layouts",
-            "dependencies": ["2.2"],
+            "dependencies": [
+              "2.2"
+            ],
             "details": "Implement column detection using geometric analysis of text blocks. Create column merging logic that maintains proper reading order. Handle varying column widths and irregular layouts common in academic papers. Support single-column abstracts transitioning to two-column body text. Implement column-spanning elements like figures and tables.",
             "status": "done",
             "testStrategy": ""
@@ -117,7 +135,10 @@
             "id": 4,
             "title": "Academic formatting detection system",
             "description": "Build detection systems for footnotes, references, equations, and other academic formatting elements",
-            "dependencies": ["2.2", "2.3"],
+            "dependencies": [
+              "2.2",
+              "2.3"
+            ],
             "details": "Implement footnote/endnote detection using font size analysis and positional heuristics. Create equation extraction handling for both inline and display math. Build reference section detection and extraction logic. Identify and extract figure/table captions with proper linking. Handle margin notes and annotations common in humanities texts.",
             "status": "done",
             "testStrategy": ""
@@ -126,7 +147,9 @@
             "id": 5,
             "title": "Metadata extraction system",
             "description": "Extract and validate document metadata including title, authors, publication information, and DOI",
-            "dependencies": ["2.2"],
+            "dependencies": [
+              "2.2"
+            ],
             "details": "Extract metadata from PDF info dictionary and XMP metadata. Implement heuristic extraction from first page for title, authors, affiliations. Parse publication information including journal, conference, year, volume, pages. Extract and validate DOI, ISBN, ISSN identifiers. Create fallback extraction using regular expressions and NLP for poorly structured documents.",
             "status": "done",
             "testStrategy": ""
@@ -135,7 +158,10 @@
             "id": 6,
             "title": "Document class with hierarchical structure",
             "description": "Design and implement Document class that represents the hierarchical structure of academic documents",
-            "dependencies": ["2.4", "2.5"],
+            "dependencies": [
+              "2.4",
+              "2.5"
+            ],
             "details": "Create Document class with nested structure: Document → Chapter → Section → Subsection → Paragraph → Sentence. Implement methods for navigating hierarchy and accessing content at different levels. Store structural metadata including headings, page numbers, and formatting. Support serialization to JSON for persistence. Include methods for structure validation and integrity checking.",
             "status": "done",
             "testStrategy": ""
@@ -144,7 +170,9 @@
             "id": 7,
             "title": "Encoding and special character handling",
             "description": "Implement robust handling of character encodings and special characters common in academic texts",
-            "dependencies": ["2.2"],
+            "dependencies": [
+              "2.2"
+            ],
             "details": "Handle UTF-8, Latin-1, and other encodings commonly found in PDFs. Process special characters including mathematical symbols, Greek letters, and diacritical marks. Implement ligature expansion (fi, fl, ff combinations). Handle non-standard fonts and symbol fonts. Create character normalization for consistent downstream processing.",
             "status": "done",
             "testStrategy": ""
@@ -153,7 +181,11 @@
             "id": 8,
             "title": "Publisher-specific format handlers",
             "description": "Create specialized handlers for IEEE, ACM, Springer, and other major academic publisher formats",
-            "dependencies": ["2.3", "2.4", "2.6"],
+            "dependencies": [
+              "2.3",
+              "2.4",
+              "2.6"
+            ],
             "details": "Implement IEEE two-column format handler with specific header/footer processing. Create ACM format handler with proper reference and author block extraction. Build Springer format handler supporting both journal and book chapter layouts. Add Elsevier, Wiley, and Taylor & Francis format support. Create publisher detection logic based on metadata and layout patterns.",
             "status": "done",
             "testStrategy": ""
@@ -162,7 +194,9 @@
             "id": 9,
             "title": "Testing framework with diverse samples",
             "description": "Build comprehensive testing framework using diverse academic PDF samples from various publishers",
-            "dependencies": ["2.8"],
+            "dependencies": [
+              "2.8"
+            ],
             "details": "Collect test PDFs from open-access repositories covering all major publishers. Create unit tests for each extraction component (text, structure, metadata). Implement integration tests for end-to-end PDF processing. Build regression tests to prevent quality degradation. Create performance benchmarks for processing speed and memory usage. Validate extraction accuracy against manually annotated ground truth.",
             "status": "pending",
             "testStrategy": ""
@@ -176,8 +210,10 @@
         "details": "Implement semantic chunking using sentence-transformers and spaCy NLP. Preserve complete paragraphs as minimum units, extend to full argumentative sections when needed. Use sliding window approach with overlap to maintain context. Identify natural breakpoints (section headers, topic transitions). Create TextSegment class with parent/child relationships. Implement coherence scoring to validate chunk quality. Handle academic writing patterns (citations, cross-references, formal structure).",
         "testStrategy": "Validate chunk completeness with academic users. Test argument preservation across different text types. Measure coherence scores and optimize thresholds. A/B test against standard chunking methods.",
         "priority": "high",
-        "dependencies": [2],
-        "status": "pending",
+        "dependencies": [
+          2
+        ],
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -185,14 +221,16 @@
             "description": "Configure and initialize spaCy with appropriate language models and custom components optimized for academic text analysis",
             "dependencies": [],
             "details": "Install spaCy with en_core_web_trf transformer model for better semantic understanding. Create custom pipeline components for academic text patterns including citation detection, formal structure recognition, and theoretical concept identification. Configure tokenization rules to handle academic conventions like abbreviations, author names (et al.), and specialized punctuation. Set up entity recognition for academic entities (authors, institutions, concepts). Initialize linguistic features extraction for dependency parsing and part-of-speech tagging.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
             "id": 2,
             "title": "Implement paragraph-level preservation logic",
             "description": "Develop core logic to maintain complete paragraphs as atomic units during chunking process",
-            "dependencies": ["3.1"],
+            "dependencies": [
+              "3.1"
+            ],
             "details": "Create ParagraphDetector class that identifies paragraph boundaries using multiple signals: double newlines, indentation patterns, and semantic coherence. Implement minimum chunk size enforcement to never split paragraphs. Develop paragraph metadata extraction including topic sentences, concluding sentences, and internal structure. Handle edge cases like multi-paragraph quotes, indented blocks, and formatted lists. Create validation logic to ensure no partial paragraphs in chunks.",
             "status": "pending",
             "testStrategy": ""
@@ -201,7 +239,10 @@
             "id": 3,
             "title": "Build argumentative unit detection using semantic analysis",
             "description": "Develop algorithms to identify and preserve complete argumentative structures in academic texts",
-            "dependencies": ["3.1", "3.2"],
+            "dependencies": [
+              "3.1",
+              "3.2"
+            ],
             "details": "Implement ArgumentDetector class using discourse markers and rhetorical structure theory. Identify argument components: claims, evidence, warrants, rebuttals, and conclusions. Use dependency parsing to track logical connections between sentences. Detect argument boundaries through transition words, topic shifts, and semantic similarity drops. Create argument graph representation for complex multi-paragraph arguments. Handle nested arguments and sub-arguments common in academic writing.",
             "status": "pending",
             "testStrategy": ""
@@ -210,7 +251,9 @@
             "id": 4,
             "title": "Implement sliding window with configurable overlap",
             "description": "Create flexible sliding window mechanism for chunk generation with context preservation",
-            "dependencies": ["3.2"],
+            "dependencies": [
+              "3.2"
+            ],
             "details": "Develop SlidingWindowChunker with configurable window size (500-2000 tokens) and overlap percentage (10-30%). Implement dynamic window adjustment based on content density and argument complexity. Create overlap deduplication strategy to avoid redundant content in vector store. Build context preservation logic ensuring overlaps contain complete sentences. Implement window boundary optimization to align with natural breakpoints. Add configuration for different academic disciplines with varying optimal parameters.",
             "status": "pending",
             "testStrategy": ""
@@ -219,7 +262,10 @@
             "id": 5,
             "title": "Develop natural breakpoint identification algorithms",
             "description": "Create sophisticated algorithms to identify optimal chunk boundaries at natural discourse transitions",
-            "dependencies": ["3.3", "3.4"],
+            "dependencies": [
+              "3.3",
+              "3.4"
+            ],
             "details": "Implement BreakpointDetector using multiple signals: section headers, topic modeling transitions, semantic similarity valleys, and discourse markers. Create hierarchy-aware breaking that respects document structure levels. Develop topic coherence scoring to identify thematic boundaries. Use sentence embeddings to detect semantic shifts between paragraphs. Implement LaTeX/Markdown structure recognition for formatted documents. Handle special academic structures like theorems, proofs, and definitions.",
             "status": "pending",
             "testStrategy": ""
@@ -228,7 +274,9 @@
             "id": 6,
             "title": "Create TextSegment class with relationship management",
             "description": "Design and implement comprehensive TextSegment data structure with hierarchical and referential relationships",
-            "dependencies": ["3.5"],
+            "dependencies": [
+              "3.5"
+            ],
             "details": "Develop TextSegment class with attributes: content, start/end positions, document_id, parent_id, child_ids, sibling_ids, and semantic_neighbors. Implement relationship tracking for parent/child hierarchies and cross-references. Create segment metadata including type (paragraph, section, argument), confidence scores, and embedding vectors. Build segment tree structure for efficient navigation. Implement serialization for storage and retrieval. Add methods for context expansion and relationship traversal.",
             "status": "pending",
             "testStrategy": ""
@@ -237,7 +285,9 @@
             "id": 7,
             "title": "Build coherence scoring system",
             "description": "Develop metrics and scoring system to validate chunk quality and semantic coherence",
-            "dependencies": ["3.6"],
+            "dependencies": [
+              "3.6"
+            ],
             "details": "Implement CoherenceScorer using multiple metrics: semantic similarity between sentences, topic consistency scores, argument completeness indicators, and citation integrity checks. Create coherence threshold validation with configurable minimum scores. Develop chunk quality metrics including readability, self-containment, and context sufficiency. Build feedback loop for chunk boundary adjustment based on low scores. Implement comparative scoring against baseline chunking methods. Add logging and monitoring for quality assurance.",
             "status": "pending",
             "testStrategy": ""
@@ -246,7 +296,10 @@
             "id": 8,
             "title": "Implement academic citation and cross-reference pattern recognition",
             "description": "Create specialized handlers for academic writing patterns including citations and cross-references",
-            "dependencies": ["3.1", "3.7"],
+            "dependencies": [
+              "3.1",
+              "3.7"
+            ],
             "details": "Develop CitationPatternRecognizer for inline citations (Author, Year), footnotes, and numbered references. Implement CrossReferenceDetector for internal document references ('see Section 2.3', 'as discussed above'). Create citation context preservation ensuring citations remain with their referencing text. Build cross-reference mapping table for later resolution. Handle various citation styles (APA, MLA, Chicago, IEEE). Implement confidence scoring for ambiguous references. Ensure citations and references are never orphaned in chunks.",
             "status": "pending",
             "testStrategy": ""
@@ -260,7 +313,9 @@
         "details": "Use sentence-transformers with academic-trained models (all-MiniLM-L6-v2 fine-tuned on scholarly texts, or specialized models like SciBERT). Implement domain-specific embedding optimization for humanities and social sciences. Create embedding pipeline that handles theoretical terminology, author names, and concept relationships. Store embeddings with FAISS for efficient similarity search. Implement embedding quality validation and confidence scoring.",
         "testStrategy": "Test semantic similarity on academic concepts. Compare retrieval quality against generic embeddings. Validate with discipline-specific terminology. Performance benchmarks for embedding generation speed.",
         "priority": "high",
-        "dependencies": [3],
+        "dependencies": [
+          3
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -276,7 +331,9 @@
             "id": 2,
             "title": "Implement domain-specific optimization for humanities/social sciences",
             "description": "Create optimization layer for theoretical terminology and discipline-specific language patterns",
-            "dependencies": ["4.1"],
+            "dependencies": [
+              "4.1"
+            ],
             "details": "Build terminology preprocessor for handling theoretical concepts, author names, and citation patterns. Implement specialized tokenization for humanities texts (e.g., German/French terms, philosophical concepts). Create mapping for discipline-specific abbreviations and conventions.",
             "status": "pending",
             "testStrategy": ""
@@ -285,7 +342,10 @@
             "id": 3,
             "title": "Build embedding pipeline with batch processing",
             "description": "Develop efficient pipeline for generating embeddings from text segments with batch processing capabilities",
-            "dependencies": ["4.1", "4.2"],
+            "dependencies": [
+              "4.1",
+              "4.2"
+            ],
             "details": "Create EmbeddingPipeline class with batch processing support for handling multiple text segments efficiently. Implement async processing for large documents. Add progress tracking and memory management for processing entire academic libraries. Include error handling and retry logic.",
             "status": "pending",
             "testStrategy": ""
@@ -294,7 +354,9 @@
             "id": 4,
             "title": "Integrate FAISS vector store and implement indexing",
             "description": "Set up FAISS for efficient vector storage and similarity search with proper indexing strategies",
-            "dependencies": ["4.3"],
+            "dependencies": [
+              "4.3"
+            ],
             "details": "Install and configure FAISS library, create VectorStore class wrapping FAISS functionality. Implement IVF indexing for large-scale search. Add metadata storage alongside vectors for document references. Create index persistence and loading mechanisms.",
             "status": "pending",
             "testStrategy": ""
@@ -303,7 +365,10 @@
             "id": 5,
             "title": "Develop confidence scoring mechanism for embedding quality",
             "description": "Create system to evaluate and score embedding quality for academic content reliability",
-            "dependencies": ["4.3", "4.4"],
+            "dependencies": [
+              "4.3",
+              "4.4"
+            ],
             "details": "Implement confidence scoring based on embedding coherence, semantic density, and domain-specific metrics. Create validation against known academic concept relationships. Add quality thresholds for filtering low-confidence embeddings. Include scoring visualization for debugging.",
             "status": "pending",
             "testStrategy": ""
@@ -312,7 +377,11 @@
             "id": 6,
             "title": "Optimize performance for large-scale embedding generation",
             "description": "Implement performance optimizations for processing entire academic libraries efficiently",
-            "dependencies": ["4.3", "4.4", "4.5"],
+            "dependencies": [
+              "4.3",
+              "4.4",
+              "4.5"
+            ],
             "details": "Add GPU acceleration support for embedding generation. Implement caching strategies for frequently accessed embeddings. Optimize batch sizes and memory usage. Create incremental indexing for new documents. Add performance monitoring and benchmarking tools.",
             "status": "pending",
             "testStrategy": ""
@@ -326,7 +395,9 @@
         "details": "Implement hybrid search combining semantic similarity (FAISS) with keyword matching. Create SearchEngine class with query preprocessing, embedding-based retrieval, and result ranking. Preserve full context around matches (paragraph-level minimum). Implement relevance scoring with confidence indicators. Support natural language queries and academic terminology. Add query expansion for related terms and synonyms. Create result caching for performance.",
         "testStrategy": "Test with diverse academic queries. Measure precision/recall against manual relevance judgments. Validate context preservation and relevance scoring. Performance tests with target <3s response time.",
         "priority": "high",
-        "dependencies": [4],
+        "dependencies": [
+          4
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -351,7 +422,9 @@
             "id": 3,
             "title": "Integrate FAISS Vector Search",
             "description": "Set up FAISS integration for efficient vector similarity search on academic embeddings",
-            "dependencies": ["5.1"],
+            "dependencies": [
+              "5.1"
+            ],
             "details": "Install and configure FAISS for Python. Create FAISSIndex wrapper class for managing vector indices. Implement index building from document embeddings with proper dimensionality. Configure index type (IVF, HNSW) based on corpus size and performance requirements. Implement k-NN search with configurable k parameter. Add index persistence and loading mechanisms.",
             "status": "pending",
             "testStrategy": ""
@@ -360,7 +433,10 @@
             "id": 4,
             "title": "Build Result Ranking Algorithm",
             "description": "Develop sophisticated ranking algorithm with relevance scoring for academic search results",
-            "dependencies": ["5.1", "5.3"],
+            "dependencies": [
+              "5.1",
+              "5.3"
+            ],
             "details": "Implement multi-factor ranking algorithm combining semantic similarity, keyword relevance, document importance, and recency. Create RelevanceScorer class with configurable weights for different factors. Implement learning-to-rank features for academic domain. Add boost factors for exact phrase matches, title matches, and author relevance. Create score normalization and result re-ranking capabilities.",
             "status": "pending",
             "testStrategy": ""
@@ -369,7 +445,9 @@
             "id": 5,
             "title": "Implement Context Preservation System",
             "description": "Build system to preserve and return full paragraph-level context around search matches",
-            "dependencies": ["5.4"],
+            "dependencies": [
+              "5.4"
+            ],
             "details": "Create ContextExtractor class that retrieves surrounding paragraphs for each match. Implement smart boundary detection to avoid breaking logical units mid-thought. Add configurable context window sizes (sentences before/after, full paragraph, section). Build context highlighting system to mark exact matches within context. Implement context deduplication for overlapping results.",
             "status": "pending",
             "testStrategy": ""
@@ -378,7 +456,10 @@
             "id": 6,
             "title": "Add Confidence Indicators",
             "description": "Implement confidence scoring system for search results and relevance indicators",
-            "dependencies": ["5.4", "5.5"],
+            "dependencies": [
+              "5.4",
+              "5.5"
+            ],
             "details": "Create ConfidenceCalculator class computing scores based on multiple factors (semantic similarity, keyword overlap, structural match). Implement confidence bands (high/medium/low) with configurable thresholds. Add explainability features showing why results have certain confidence levels. Create confidence aggregation for multi-source results. Implement confidence calibration using validation datasets.",
             "status": "pending",
             "testStrategy": ""
@@ -387,7 +468,10 @@
             "id": 7,
             "title": "Implement Caching Layer",
             "description": "Build performance optimization caching system for frequently accessed queries and results",
-            "dependencies": ["5.5", "5.6"],
+            "dependencies": [
+              "5.5",
+              "5.6"
+            ],
             "details": "Implement Redis-based caching for query results with TTL configuration. Create QueryCache class with LRU eviction policy. Build cache key generation considering query normalization and parameters. Implement cache invalidation on document updates. Add cache warming for common academic queries. Create cache hit/miss metrics and monitoring.",
             "status": "pending",
             "testStrategy": ""
@@ -396,7 +480,10 @@
             "id": 8,
             "title": "Create Natural Language Query Parser",
             "description": "Build NLP-based query parser optimized for academic search queries",
-            "dependencies": ["5.2", "5.7"],
+            "dependencies": [
+              "5.2",
+              "5.7"
+            ],
             "details": "Implement NLQueryParser using spaCy/NLTK for parsing natural language academic queries. Extract entities (authors, concepts, dates) and intent (definition, comparison, citation). Handle complex academic query patterns ('What does X say about Y?', 'Compare A and B on topic C'). Create query templates for common academic search patterns. Implement query suggestion and auto-completion features.",
             "status": "pending",
             "testStrategy": ""
@@ -410,7 +497,9 @@
         "details": "Create citation extraction using pybtex and citeproc-py. Map text segments to exact page and paragraph locations. Extract bibliographic metadata from PDFs and validate against standard formats. Implement Citation class with format validation (APA, MLA, Chicago, etc.). Create source attribution tracking for every text segment. Support export to BibTeX, Zotero, Mendeley formats. Ensure 100% accuracy in page/paragraph references.",
         "testStrategy": "Verify citation accuracy with manual validation. Test format compatibility with reference managers. Validate page/paragraph references across different PDF structures. Zero-tolerance testing for citation errors.",
         "priority": "high",
-        "dependencies": [5],
+        "dependencies": [
+          5
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -421,7 +510,9 @@
         "details": "Create MCP tools for literature_search, document_retrieval, citation_lookup, and source_attribution. Implement proper error handling and validation for tool calls. Create structured response formats that Claude can effectively use. Implement streaming responses for large results. Add tool descriptions and parameter schemas. Create integration tests with actual Claude Desktop sessions. Handle concurrent requests and resource management.",
         "testStrategy": "Integration testing with Claude Desktop. Validate tool response formats and error handling. Test concurrent usage scenarios. User acceptance testing with natural language queries through Claude.",
         "priority": "high",
-        "dependencies": [6],
+        "dependencies": [
+          6
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -432,7 +523,9 @@
         "details": "Create DocumentStructure class for hierarchical navigation (chapter → section → subsection). Implement cross-reference resolution for 'see Chapter 2', 'as discussed above' patterns using NLP and structural analysis. Extract and link footnotes/endnotes to main text. Create terminology mapping system to track author-specific language usage. Build confidence scoring for cross-reference resolution. Handle different academic document structures and conventions.",
         "testStrategy": "Test cross-reference resolution accuracy with diverse academic texts. Validate structural extraction across different document types. Measure confidence scores and optimize resolution algorithms.",
         "priority": "medium",
-        "dependencies": [7],
+        "dependencies": [
+          7
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -443,7 +536,9 @@
         "details": "Implement ArgumentTracker class for chronological concept development across authors. Create ContradictionDetector using semantic similarity and sentiment analysis to identify opposing viewpoints. Build ResearchGapAnalyzer to identify underexplored areas by analyzing concept coverage and methodology patterns. Create synthesis validation using coherence metrics. Support multi-document narrative construction with proper attribution. Implement confidence scoring for synthesis quality.",
         "testStrategy": "Validate argument tracking with known theoretical developments. Test contradiction detection against manually identified disagreements. Evaluate research gap suggestions with domain experts. Measure synthesis coherence and quality.",
         "priority": "medium",
-        "dependencies": [8],
+        "dependencies": [
+          8
+        ],
         "status": "pending",
         "subtasks": []
       },
@@ -454,14 +549,16 @@
         "details": "Implement caching strategies for embeddings, search results, and processed documents. Optimize memory usage with lazy loading and efficient data structures. Add batch processing capabilities for systematic reviews. Implement comprehensive error handling, logging, and recovery mechanisms. Create monitoring and metrics collection. Optimize for target performance: <3s search response, <2GB memory usage, support for 500MB-1GB document libraries. Add configuration management and deployment scripts.",
         "testStrategy": "Load testing with 50+ PDFs. Memory usage profiling and optimization. Performance benchmarking against targets. Stress testing with concurrent users. Error injection testing for robustness validation.",
         "priority": "medium",
-        "dependencies": [9],
+        "dependencies": [
+          9
+        ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-06T21:13:56.215Z",
-      "updated": "2025-08-11T16:03:31.613Z",
+      "updated": "2025-08-11T16:07:31.065Z",
       "description": "Tasks for master context"
     }
   }

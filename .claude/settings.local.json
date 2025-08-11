@@ -30,7 +30,12 @@
       "Bash(task-master show:*)",
       "Bash(task-master set-status:*)",
       "Bash(task-master:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(node:*)",
+      "Bash(pyenv install:*)",
+      "Bash(pyenv local:*)"
     ],
     "deny": []
   },
