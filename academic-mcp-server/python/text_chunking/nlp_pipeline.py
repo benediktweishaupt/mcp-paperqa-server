@@ -10,6 +10,33 @@ try:
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
+    # Create mock classes for when spaCy is not available
+    class Language:
+        @staticmethod
+        def has_factory(name):
+            return False
+        @staticmethod
+        def factory(name):
+            def decorator(func):
+                return func
+            return decorator
+    
+    class Doc:
+        pass
+    
+    class Token:
+        pass
+    
+    class Span:
+        pass
+    
+    class Matcher:
+        def __init__(self, vocab):
+            pass
+    
+    class PhraseMatcher:
+        def __init__(self, vocab):
+            pass
     
 import re
 from typing import List, Dict, Optional, Tuple, Set
