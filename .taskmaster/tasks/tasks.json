@@ -244,7 +244,7 @@
               "3.2"
             ],
             "details": "Implement ArgumentDetector class using discourse markers and rhetorical structure theory. Identify argument components: claims, evidence, warrants, rebuttals, and conclusions. Use dependency parsing to track logical connections between sentences. Detect argument boundaries through transition words, topic shifts, and semantic similarity drops. Create argument graph representation for complex multi-paragraph arguments. Handle nested arguments and sub-arguments common in academic writing.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -558,7 +558,7 @@
     ],
     "metadata": {
       "created": "2025-08-06T21:13:56.215Z",
-      "updated": "2025-08-12T08:21:33.628Z",
+      "updated": "2025-08-18T20:54:54.963Z",
       "description": "Tasks for master context"
     }
   }

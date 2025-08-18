@@ -230,14 +230,24 @@ class AcademicNLPPipeline:
             
             # Mark discourse markers
             for sent in doc.sents:
+                # Track if sentence has any discourse markers
+                sentence_roles = []
+                
                 for token in sent:
                     for role, markers in discourse_markers.items():
                         if token.lemma_.lower() in markers:
                             token._.is_discourse_marker = True
-                            # Mark sentence with argument role
-                            sent_span = sent.as_doc().spans.get("sentence", sent)
-                            if hasattr(sent_span, "_"):
-                                sent_span._.argument_role = role
+                            sentence_roles.append(role)
+                
+                # Assign primary role to sentence (prioritize claim > evidence > conclusion > contrast > support)
+                if sentence_roles:
+                    role_priority = ['claim', 'evidence', 'conclusion', 'contrast', 'support']
+                    primary_role = next((role for role in role_priority if role in sentence_roles), sentence_roles[0])
+                    
+                    # Set sentence-level argument role using span extension
+                    if not Span.has_extension("argument_role"):
+                        Span.set_extension("argument_role", default=None)
+                    sent._.argument_role = primary_role
             
             return doc
         
@@ -425,6 +435,57 @@ class AcademicNLPPipeline:
         
         return sentence_metrics
     
+    def analyze_argumentative_structure(self, doc: Doc) -> Dict[str, Any]:
+        """
+        Analyze argumentative structure in document using advanced argument detection
+        
+        Args:
+            doc: Processed spaCy Doc
+            
+        Returns:
+            Dictionary with argument analysis results
+        """
+        try:
+            # Import here to avoid circular imports
+            from .argument_analyzer import ArgumentAnalyzer
+            
+            analyzer = ArgumentAnalyzer(nlp_pipeline=self)
+            graph = analyzer.analyze_argumentative_structure(doc.text)
+            
+            return {
+                'argument_units': len(graph.argument_units),
+                'logical_connections': len(graph.edges),
+                'root_claims': len(graph.root_claims),
+                'nested_arguments': len(graph.sub_arguments),
+                'complexity_score': graph.complexity_score,
+                'coherence_score': graph.coherence_score,
+                'completeness_score': graph.completeness_score,
+                'argument_boundaries': analyzer.get_argument_boundaries(graph)
+            }
+        except ImportError:
+            # Fallback analysis using basic discourse markers
+            return self._basic_argument_analysis(doc)
+    
+    def _basic_argument_analysis(self, doc: Doc) -> Dict[str, Any]:
+        """Basic argument analysis fallback when ArgumentAnalyzer not available"""
+        discourse_markers = self.get_discourse_markers(doc)
+        
+        # Count different types of discourse markers
+        claim_markers = len([m for m in discourse_markers if any(word in m['lemma'] for word in ['argue', 'claim', 'assert'])])
+        evidence_markers = len([m for m in discourse_markers if any(word in m['lemma'] for word in ['evidence', 'shows', 'demonstrates'])])
+        conclusion_markers = len([m for m in discourse_markers if any(word in m['lemma'] for word in ['therefore', 'thus', 'conclude'])])
+        
+        return {
+            'argument_units': len(list(doc.sents)),
+            'logical_connections': len(discourse_markers),
+            'claim_indicators': claim_markers,
+            'evidence_indicators': evidence_markers,
+            'conclusion_indicators': conclusion_markers,
+            'complexity_score': min(1.0, len(discourse_markers) / 10),
+            'coherence_score': 0.7,  # Default moderate coherence
+            'completeness_score': min(1.0, (claim_markers + evidence_markers) / 3)
+        }
+
     def get_pipeline_info(self) -> Dict:
         """Get information about the loaded pipeline"""
         return {
@@ -432,13 +493,17 @@ class AcademicNLPPipeline:
             'pipe_names': self.nlp.pipe_names,
             'components': len(self.nlp.pipeline),
             'vocab_size': len(self.nlp.vocab),
-            'has_transformer': 'transformer' in str(type(self.nlp)).lower()
+            'has_transformer': 'transformer' in str(type(self.nlp)).lower(),
+            'has_argument_analyzer': True  # Now includes argument analysis
         }
 
 
 # Utility functions for installation and model management
 def download_required_models():
     """Download required spaCy models"""
+    if not SPACY_AVAILABLE:
+        raise ImportError("spaCy not available. Install with: pip install spacy")
+    
     import subprocess
     import sys
     
@@ -456,6 +521,8 @@ def download_required_models():
 
 def is_transformer_available() -> bool:
     """Check if transformer model is available"""
+    if not SPACY_AVAILABLE:
+        return False
     try:
         spacy.load("en_core_web_trf")
         return True

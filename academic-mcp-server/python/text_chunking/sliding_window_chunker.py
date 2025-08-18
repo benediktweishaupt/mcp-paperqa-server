@@ -254,10 +254,13 @@ class SlidingWindowChunker:
         # Step 2: Process through NLP pipeline for token counting and analysis
         doc = self._process_text(text)
         
-        # Step 3: Calculate optimal chunk boundaries using sliding window
-        chunk_boundaries = self._calculate_chunk_boundaries(text, doc, paragraphs)
+        # Step 3: Analyze argumentative structure for boundary preservation
+        argument_boundaries = self._analyze_argumentative_structure(doc)
         
-        # Step 4: Create chunks with overlap and metadata
+        # Step 4: Calculate optimal chunk boundaries using sliding window
+        chunk_boundaries = self._calculate_chunk_boundaries(text, doc, paragraphs, argument_boundaries)
+        
+        # Step 5: Create chunks with overlap and metadata
         chunks = self._create_chunks_with_overlap(text, doc, paragraphs, chunk_boundaries, document_id)
         
         # Step 5: Post-process chunks for quality and deduplication
@@ -290,7 +293,58 @@ class SlidingWindowChunker:
             mock_doc.text = text
             return mock_doc
     
-    def _calculate_chunk_boundaries(self, text: str, doc: Doc, paragraphs: List[ParagraphMetadata]) -> List[int]:
+    def _analyze_argumentative_structure(self, doc: Doc) -> List[Tuple[int, int]]:
+        """Analyze argumentative structure to identify boundaries that should not be split"""
+        try:
+            # Use the NLP pipeline's argument analysis capabilities
+            if hasattr(self.nlp_pipeline, 'analyze_argumentative_structure'):
+                analysis = self.nlp_pipeline.analyze_argumentative_structure(doc)
+                
+                # Extract argument boundaries if available
+                if 'argument_boundaries' in analysis:
+                    return analysis['argument_boundaries']
+            
+            # Fallback: use discourse marker-based boundaries
+            return self._detect_argument_boundaries_fallback(doc)
+            
+        except Exception as e:
+            self.logger.warning(f"Argument analysis failed: {e}, using discourse markers")
+            return self._detect_argument_boundaries_fallback(doc)
+    
+    def _detect_argument_boundaries_fallback(self, doc: Doc) -> List[Tuple[int, int]]:
+        """Fallback method to detect argument boundaries using discourse markers"""
+        boundaries = []
+        
+        if not hasattr(doc, 'sents'):
+            return boundaries
+        
+        sentences = list(doc.sents)
+        current_arg_start = None
+        
+        for i, sent in enumerate(sentences):
+            sent_text = sent.text.lower()
+            
+            # Check for argument starting markers
+            if any(marker in sent_text for marker in ['argue', 'claim', 'assert', 'propose']):
+                if current_arg_start is not None:
+                    # Close previous argument
+                    boundaries.append((current_arg_start, sent.start_char))
+                current_arg_start = sent.start_char
+            
+            # Check for argument ending markers
+            elif any(marker in sent_text for marker in ['therefore', 'thus', 'conclude', 'in conclusion']):
+                if current_arg_start is not None:
+                    boundaries.append((current_arg_start, sent.end_char))
+                    current_arg_start = None
+        
+        # Close final argument if still open
+        if current_arg_start is not None and sentences:
+            boundaries.append((current_arg_start, sentences[-1].end_char))
+        
+        return boundaries
+    
+    def _calculate_chunk_boundaries(self, text: str, doc: Doc, paragraphs: List[ParagraphMetadata], 
+                                   argument_boundaries: List[Tuple[int, int]] = None) -> List[int]:
         """
         Calculate optimal chunk boundaries using sliding window approach
         
@@ -329,9 +383,9 @@ class SlidingWindowChunker:
             # Ensure we don't exceed text length
             target_end = min(target_end, text_length)
             
-            # Find optimal boundary near target position
+            # Find optimal boundary near target position, respecting argument boundaries
             optimal_boundary = self._find_optimal_boundary(
-                text, paragraphs, current_pos, target_end, min_chunk_chars, max_chunk_chars
+                text, paragraphs, current_pos, target_end, min_chunk_chars, max_chunk_chars, argument_boundaries
             )
             
             # Add boundary if it creates a valid chunk
@@ -393,11 +447,13 @@ class SlidingWindowChunker:
     
     def _find_optimal_boundary(self, text: str, paragraphs: List[ParagraphMetadata], 
                                start_pos: int, target_end: int, 
-                               min_chunk_chars: int, max_chunk_chars: int) -> int:
+                               min_chunk_chars: int, max_chunk_chars: int,
+                               argument_boundaries: List[Tuple[int, int]] = None) -> int:
         """
         Find the optimal boundary position near the target end
         
         Priority order:
+        0. Argument boundaries (highest priority - never split arguments)
         1. Paragraph boundaries (if preserve_paragraphs is True)
         2. Sentence boundaries (if preserve_sentences is True) 
         3. Natural breakpoints (punctuation, line breaks)
@@ -408,6 +464,19 @@ class SlidingWindowChunker:
         search_window = min(200, max_chunk_chars // 10)
         search_start = max(start_pos + min_chunk_chars, target_end - search_window)
         search_end = min(len(text), target_end + search_window)
+        
+        # Priority 0: Check argument boundaries - never split arguments
+        if argument_boundaries:
+            for arg_start, arg_end in argument_boundaries:
+                # If target position would split an argument, move to argument boundary
+                if arg_start < target_end < arg_end:
+                    # Choose closer boundary (start or end of argument)
+                    if abs(target_end - arg_start) < abs(target_end - arg_end):
+                        if arg_start >= start_pos + min_chunk_chars:
+                            return arg_start
+                    else:
+                        if arg_end <= start_pos + max_chunk_chars:
+                            return arg_end
         
         # Option 1: Paragraph boundaries (highest priority)
         if self.config.preserve_paragraphs and paragraphs:

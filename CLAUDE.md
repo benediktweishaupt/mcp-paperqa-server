@@ -61,6 +61,12 @@ Academic Research Assistant - An MCP server for PhD students to interact with th
 - Document all public APIs
 - Handle errors gracefully
 
+## Documentation
+
+- If not already there, make a PROGRESS.md file in the root folder.
+- After each task document what you have done and how you have implemented it.
+- If you came across certain things you couldn't implement like you initially thought, document this DEFENITLEY.
+
 - **Analysis Process:**
   - Compare new code with existing rules
   - Identify patterns that should be standardized
