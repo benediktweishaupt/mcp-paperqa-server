@@ -1,0 +1,182 @@
+{
+  "main": {
+    "id": "088d1d5580480b3f",
+    "type": "split",
+    "children": [
+      {
+        "id": "adc41a79fac56a89",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1463b17bd04a3b00",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "expose-reviewer/Framework-for-evaluating-PhDs.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Framework-for-evaluating-PhDs"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "546f0e4265f9ad9d",
+    "type": "split",
+    "children": [
+      {
+        "id": "b3d460aa9c6622f7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a6bfd03ddb5904e8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1f12db6d4534fd96",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "1d2e41db85c9a8da",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "a9a7d9abf300d69a",
+    "type": "split",
+    "children": [
+      {
+        "id": "0986224dd0fc7ab7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a199add80f408dd2",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Bibliography.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Bibliography"
+            }
+          },
+          {
+            "id": "16486b481b04f1fe",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Bibliography.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Bibliography"
+            }
+          },
+          {
+            "id": "c48ad5cf6976b2c5",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "94fdbcdd48ce7f66",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Bibliography.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Bibliography"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "a6bfd03ddb5904e8",
+  "lastOpenFiles": [
+    "expose-reviewer/PhD-Programms.md",
+    "expose-reviewer/Framework-for-evaluating-PhDs.md",
+    "Zeitplan.md",
+    "Expose v7 von google docs.md",
+    "Expose-v6_current.md",
+    "Bibliography.md",
+    "expose-reviewer",
+    "RULES.md"
+  ]
+}
