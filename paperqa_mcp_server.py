@@ -12,8 +12,7 @@ import logging
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
+from mcp.server.fastmcp import FastMCP
 from mcp.types import Tool, TextContent
 
 # PaperQA2 imports - using our validated PyPI package
@@ -25,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Global state - simple and effective for MCP server
-server = Server("paperqa-academic")
+server = FastMCP("paperqa-academic")
 docs = Docs()
 
 # Use our validated embedding recommendation from Task 2
@@ -349,9 +348,8 @@ async def main():
     
     logger.info("PaperQA2 MCP Server ready - connecting to Claude Desktop...")
     
-    # Run the MCP server with stdio transport
-    async with stdio_server() as (read, write):
-        await server.run(read, write)
+    # Run the FastMCP server
+    await server.run()
 
 
 if __name__ == "__main__":
