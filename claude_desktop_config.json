@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "paperqa-academic": {
+      "command": "python3",
+      "args": ["/Users/benediktw/Documents/gitHub/academic-mcp-server/paperqa_mcp_server.py"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "VOYAGE_API_KEY": "${VOYAGE_API_KEY}",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
+      }
+    }
+  }
+}

@@ -10,7 +10,56 @@ Academic Research Assistant - An MCP server for PhD students to interact with th
 
 - `academic-mcp-server/` - Main MCP server development directory
   - `prd.md` - Product Requirements Document with detailed specifications
+- `paper-qa/` - **NEVER MODIFY** - Clean PaperQA2 clone for dependency use only
 - `agentic-coding/`, `expose/`, `expose-reviewer/` - Documentation directories (not relevant for MCP development)
+
+## CRITICAL ARCHITECTURE RULE - NEVER VIOLATE
+
+**PaperQA2 Integration Architecture - ABSOLUTELY MANDATORY:**
+
+### ❌ NEVER DO:
+- **NEVER** modify any files inside `paper-qa/` directory
+- **NEVER** create new files in `paper-qa/src/` 
+- **NEVER** add code to the PaperQA2 repository
+- **NEVER** commit changes to the `paper-qa/` directory
+
+### ✅ CORRECT APPROACH:
+- `paper-qa/` is a **READ-ONLY** dependency directory
+- Only use `paper-qa/` for: installation (`pip install -e .`) and importing PaperQA2 classes
+- Build our MCP server in `academic-mcp-server/` that USES PaperQA2 as external dependency
+- Create tests in `/tests/` or root level that import PaperQA2
+- Use Python subprocess or API calls to bridge TypeScript ↔ PaperQA2
+- Keep `paper-qa/` clean so we can `git pull` updates anytime without conflicts
+
+### PaperQA2 Usage Patterns:
+- **Starting PaperQA2**: Import and use their classes/functions in our code
+- **Testing**: We can reuse their test utilities and stub data for our integration tests
+- **Execution**: Run PaperQA2 via Python imports, not by modifying their CLI or source
+
+### Available PaperQA2 Test Categories (for reference/reuse):
+- **agents**: Agent workflow testing with tools and memory
+- **cli**: Command line interface testing  
+- **clients**: External API clients (Crossref, Semantic Scholar, etc.)
+- **clinical_trials**: Medical research specific functionality
+- **configs**: Settings and configuration validation
+- **paperqa**: Core functionality, citations, document processing
+
+### PaperQA2 Test Resources We Can Use:
+- `paper-qa/tests/conftest.py` - Test fixtures and utilities
+- `paper-qa/tests/stub_data/` - Test documents (PDFs, text files, etc.)
+- Test patterns for Settings, Docs, and agent_query usage
+
+### Directory Usage:
+```
+academic-mcp-server/
+├── paper-qa/                    # 🚫 NEVER TOUCH - Clean dependency
+├── academic-mcp-server/         # ✅ Our MCP server code
+├── tests/                       # ✅ Our integration tests  
+├── scripts/                     # ✅ Our helper scripts
+└── paperqa_bridge.py           # ✅ Python bridge to PaperQA2
+```
+
+**This rule has been violated multiple times. NEVER make this mistake again.**
 
 ## Development Environment
 

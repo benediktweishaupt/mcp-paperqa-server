@@ -1,0 +1,23 @@
+{
+  "OpenAI (Default)": {
+    "embedding_model": "text-embedding-3-small",
+    "configuration_time": 0.03086996078491211,
+    "configuration_success": true,
+    "llm_model": "gpt-4o-2024-11-20",
+    "error": null
+  },
+  "Voyage AI (Recommended)": {
+    "embedding_model": "voyage-ai/voyage-3-lite",
+    "configuration_time": 0.0005221366882324219,
+    "configuration_success": true,
+    "llm_model": "gpt-4o-2024-11-20",
+    "error": null
+  },
+  "Google Gemini (Latest)": {
+    "embedding_model": "gemini/gemini-embedding-001",
+    "configuration_time": 0.00043702125549316406,
+    "configuration_success": true,
+    "llm_model": "gpt-4o-2024-11-20",
+    "error": null
+  }
+}
