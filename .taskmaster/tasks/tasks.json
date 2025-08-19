@@ -1,9 +1,139 @@
 {
   "master": {
-    "tasks": [],
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Fork and Setup PaperQA2 Repository",
+        "description": "Clone PaperQA2 repository, set up development environment, and prepare project structure for MCP integration",
+        "details": "Clone https://github.com/Future-House/paper-qa.git, install dependencies with pip install -e ., create test_papers/ directory, and set up basic development environment. Verify PaperQA2 functionality with sample academic PDFs to ensure core functionality works before adding MCP wrapper.",
+        "testStrategy": "Load 5-10 academic PDFs from different domains, test basic query functionality, verify PDF processing and text extraction works correctly, measure baseline performance and memory usage",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Test and Benchmark Embedding Models",
+        "description": "Evaluate different embedding models (OpenAI, Voyage AI, Gemini) for academic search quality and performance",
+        "details": "Test three embedding configurations: text-embedding-3-small (current default), voyage-ai/voyage-3-lite (best cost/performance), and gemini/gemini-embedding-001 (latest performance leader). Run academic queries against each model and benchmark search relevance, response time, and API costs.",
+        "testStrategy": "Create standardized test suite with 10 academic queries, measure relevance scores (>80% target), response times (<10s target), and cost per query. Document performance differences and recommend optimal model.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Build Basic MCP Server Framework",
+        "description": "Create fundamental MCP server structure and test basic Claude Desktop integration",
+        "details": "Create test_mcp_server.py with basic MCP server using mcp.server.Server, implement test tools for search and upload functionality, and verify Claude Desktop integration works with .mcp.json configuration. Focus on protocol compliance and error handling.",
+        "testStrategy": "Test MCP server startup, tool registration with Claude Desktop, basic tool calls, error handling, and concurrent request handling. Verify server handles 5+ concurrent requests gracefully.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Design MCP Integration Architecture",
+        "description": "Create comprehensive architecture for PaperQA2 MCP wrapper with proper directory structure and interfaces",
+        "details": "Design src/paperqa/mcp/ module structure with server.py (main implementation), tools.py (tool wrappers), config.py (MCP configuration), and utils.py (helpers). Plan integration points with existing PaperQA2 codebase and define clean interfaces.",
+        "testStrategy": "Review architecture design with PaperQA2 codebase structure, ensure no conflicts with existing modules, validate clean separation of concerns, and verify extensibility for future features.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement PaperQAMCPServer Core Class",
+        "description": "Build main MCP server class that wraps PaperQA2 functionality with proper initialization and configuration",
+        "details": "Implement PaperQAMCPServer class with Settings configuration, Docs initialization, paper directory management, and automatic loading of existing PDFs. Include proper error handling, logging, and resource management.",
+        "testStrategy": "Test server initialization with different configurations, verify automatic PDF loading from directory, test settings override functionality, and validate proper resource cleanup on shutdown.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement MCP Tool Wrappers",
+        "description": "Create MCP tool functions that expose PaperQA2's research capabilities through standardized interfaces",
+        "details": "Implement search_literature, add_document, get_library_status, and configure_embedding_model tools. Each tool should handle async operations, provide detailed error messages, and return formatted responses suitable for Claude Desktop display.",
+        "testStrategy": "Test each tool individually with various inputs, verify error handling for edge cases, test async operation handling, validate response formatting, and ensure proper integration with PaperQA2 agent_query functionality.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Add CLI Integration",
+        "description": "Extend PaperQA2 CLI with mcp-server command for easy server startup and configuration",
+        "details": "Modify src/paperqa/cli.py to add mcp_server command with options for config, paper-directory, embedding-model, host, and port. Use click framework for consistent CLI experience and proper argument validation.",
+        "testStrategy": "Test CLI command with various argument combinations, verify help text and error messages, test configuration loading, and ensure server startup works from command line.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Comprehensive Error Handling",
+        "description": "Add robust error handling throughout the MCP integration for graceful failure modes",
+        "details": "Implement try-catch blocks for all async operations, add proper logging with different levels, handle API rate limits with exponential backoff, manage file system errors, and provide clear user-facing error messages.",
+        "testStrategy": "Test error scenarios including network failures, invalid files, API limits, missing directories, corrupted PDFs, and concurrent access issues. Verify all errors are logged appropriately and return helpful messages.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Create Integration Test Suite",
+        "description": "Build comprehensive test suite covering end-to-end workflows and edge cases",
+        "details": "Create tests/test_mcp/ directory with test_server.py, test_tools.py, and test_integration.py. Include pytest fixtures for test server instances, mock data, and cleanup. Test complete research workflows, error handling, and performance scenarios.",
+        "testStrategy": "Run full test suite with academic PDF collection, validate literature search quality, test document management operations, verify error handling, and measure performance against target metrics (<15s response time, <4GB memory).",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "End-to-End Integration and Documentation",
+        "description": "Complete Claude Desktop integration, create documentation, and prepare for production use",
+        "details": "Test complete academic workflow with Claude Desktop, create comprehensive documentation including setup guide, usage examples, and troubleshooting. Prepare examples/mcp/ directory with basic_usage.py, claude_setup.md, and test_queries.md.",
+        "testStrategy": "Validate complete PhD student workflow from empty library to literature review completion, test with 20+ academic papers, verify citation accuracy and academic writing quality, measure 3x speed improvement over manual methods.",
+        "priority": "medium",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
     "metadata": {
       "created": "2025-08-06T21:13:56.215Z",
-      "updated": "2025-08-19T14:15:00.000Z",
+      "updated": "2025-08-19T14:00:02.597Z",
       "description": "Tasks for master context"
     }
   }

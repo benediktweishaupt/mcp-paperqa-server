@@ -7,6 +7,7 @@
       "ReadFile(*)",
       "WriteFile(*)",
       "CreateFile(*)",
+
       "Bash(node *)",
       "Bash(npm run *)",
       "Bash(npm test*)",
@@ -16,10 +17,12 @@
       "Bash(npm list *)",
       "Bash(npm view *)",
       "Bash(npm outdated)",
+
       "Bash(yarn *)",
       "Bash(pnpm *)",
       "Bash(npx *)",
       "Bash(nx *)",
+
       "Bash(python -m *)",
       "Bash(python3 *)",
       "Bash(pip install *)",
@@ -33,6 +36,7 @@
       "Bash(pipenv *)",
       "Bash(venv/bin/*)",
       "Bash(.venv/bin/*)",
+
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
@@ -45,6 +49,7 @@
       "Bash(git stash*)",
       "Bash(git merge*)",
       "Bash(git rebase*)",
+
       "Bash(echo *)",
       "Bash(cat *)",
       "Bash(ls *)",
@@ -64,23 +69,23 @@
       "Bash(rollup *)",
       "Bash(esbuild *)",
       "Bash(parcel *)",
+
       "Bash(docker-compose up*)",
       "Bash(docker-compose down)",
       "Bash(docker-compose logs*)",
       "Bash(docker ps*)",
       "Bash(docker images)",
+
       "Bash(curl http://localhost*)",
       "Bash(curl http://127.0.0.1*)",
+
       "Bash(./scripts/*.sh)",
       "Bash(./node_modules/.bin/*)",
       "Bash(jq *)",
       "Bash(sed -i *)",
-      "Bash(awk *)",
-      "Bash(task-master list:*)",
-      "WebSearch",
-      "WebFetch(domain:huggingface.co)",
-      "WebFetch(domain:github.com)"
+      "Bash(awk *)"
     ],
+
     "deny": [
       "Bash(rm -rf /)",
       "Bash(rm -rf ~)",
@@ -100,73 +105,89 @@
       "Bash(history -c)",
       "Bash(kill -9 -1)"
     ],
+
     "ask": [
       "Bash(rm -rf *)",
       "Bash(rm -r *)",
       "Bash(rm *.js)",
       "Bash(rm *.py)",
       "DeleteFile(*)",
+
       "Bash(sudo *)",
       "Bash(su *)",
       "Bash(chmod *)",
       "Bash(chown *)",
+
       "Bash(npm publish)",
       "Bash(yarn publish)",
       "Bash(pip upload*)",
       "Bash(twine upload*)",
+
       "Bash(git push*)",
       "Bash(git reset --hard*)",
       "Bash(git clean -fd*)",
       "Bash(git force*)",
       "Bash(git remote add*)",
       "Bash(git remote set-url*)",
+
       "Bash(curl -X POST *)",
       "Bash(curl -X PUT *)",
       "Bash(curl -X DELETE *)",
       "Bash(wget -O *)",
+
       "Bash(psql *)",
       "Bash(mysql *)",
       "Bash(mongosh *)",
       "Bash(redis-cli *)",
+
       "Bash(aws *)",
       "Bash(gcloud *)",
       "Bash(az *)",
       "Bash(heroku *)",
       "Bash(vercel *)",
       "Bash(netlify *)",
+
       "Bash(ssh *)",
       "Bash(scp *)",
       "Bash(rsync --delete*)",
+
       "Bash(npm link*)",
       "Bash(npm uninstall *)",
       "Bash(pip uninstall *)",
+
       "Bash(export *SECRET*)",
       "Bash(export *TOKEN*)",
       "Bash(export *KEY*)",
       "Bash(export *PASSWORD*)",
+
       "Bash(systemctl *)",
       "Bash(service *)",
+
       "Bash(npm init*)",
       "Bash(yarn init*)",
       "Bash(npx create-*)",
+
       "Bash(docker rm *)",
       "Bash(docker rmi *)",
       "Bash(docker system prune*)",
+
       "Bash(* --force)",
       "Bash(* -f)",
+
       "Bash(crontab *)",
       "Bash(at *)",
+
       "Bash(nc *)",
       "Bash(netcat *)",
       "Bash(nmap *)",
+
       "Bash(> /etc/*)",
       "Bash(> ~/.ssh/*)",
       "Bash(> ~/.aws/*)"
     ],
+
     "defaultMode": "acceptEdits",
     "enableAllProjectMcpServers": true,
-    "enabledMcpjsonServers": [
-      "task-master-ai"
-    ]
+    "enabledMcpjsonServers": ["task-master-ai"]
   }
 }
