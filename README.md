@@ -1,6 +1,8 @@
-# PaperQA2 MCP Server - Academic Research Assistant
+# 🎓 Academic Research Assistant
 
-A lean, fast MCP (Model Context Protocol) server that integrates PaperQA2 with Claude Desktop for PhD-level academic research workflows.
+**AI-powered research through your academic library using Claude Desktop**
+
+Transform your PhD research workflow: Instead of manually searching through 30+ academic texts, have natural conversations with Claude to find relevant passages, track arguments across authors, and generate properly formatted citations.
 
 ## 🎯 Overview
 
@@ -12,48 +14,24 @@ This project provides a production-ready MCP server that transforms how PhD stud
 - **Comprehensive coverage** through AI-powered semantic search
 - **Production-ready** lean implementation (256 lines vs 500+ complex alternatives)
 
-## 🚀 Quick Start
+## ⚡ Quick Start
 
-### Prerequisites
-- Python 3.9+
-- Claude Desktop app
-- API keys for embedding/LLM providers
-
-### Installation
-
-1. **Clone and install dependencies:**
 ```bash
-git clone https://github.com/yourusername/academic-mcp-server.git
-cd academic-mcp-server
-pip install paper-qa mcp
+# 1. Install dependencies  
+pip install -r requirements.txt
+
+# 2. Set up API keys (copy .env.example to .env)
+cp .env.example .env
+# Edit .env with your OpenAI and Voyage AI keys
+
+# 3. Add your PDF books
+cp your-books/*.pdf paperqa-mcp/papers/
+
+# 4. Start the server
+python3 paperqa-mcp/server.py
 ```
 
-2. **Set up API keys:**
-```bash
-export OPENAI_API_KEY="your_openai_key"
-export VOYAGE_API_KEY="your_voyage_key"  # Recommended for cost efficiency
-export GEMINI_API_KEY="your_gemini_key"  # Optional
-```
-
-3. **Configure Claude Desktop:**
-Add to your Claude Desktop MCP configuration (`~/.claude/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "paperqa-academic": {
-      "command": "python3",
-      "args": ["/path/to/your/academic-mcp-server/paperqa_mcp_server.py"],
-      "env": {
-        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-        "VOYAGE_API_KEY": "${VOYAGE_API_KEY}",
-        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-4. **Restart Claude Desktop** and start researching!
+**Detailed setup**: See `TODO_SETUP.md` for step-by-step instructions.
 
 ### First Research Session
 

@@ -9,8 +9,6 @@ through the MCP protocol without complex bridge architectures.
 
 import asyncio
 import logging
-import pickle
-import hashlib
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -19,38 +17,29 @@ from mcp.types import Tool, TextContent
 
 # PaperQA2 imports - using our validated PyPI package
 from paperqa import agent_query, Settings, Docs
+from paperqa.settings import AgentSettings, IndexSettings
 import paperqa
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import configuration
+from config import get_paperqa_settings, get_supported_embedding_models, get_model_info
+
+# Get optimized settings for academic research
+settings = get_paperqa_settings()
+
+# Directory references for logging
+paper_directory = Path(__file__).parent / "papers"
+cache_directory = Path(__file__).parent / "cache"
+
 # Global state - simple and effective for MCP server
 server = FastMCP("paperqa-academic")
 docs = Docs()
 
-# Use our validated embedding recommendation from Task 2
-settings = Settings(
-    embedding="voyage-ai/voyage-3-lite",  # Best cost/performance from our tests
-    llm="gpt-4o-2024-11-20",
-    temperature=0.0
-)
-
-# Configure answer settings for better academic quality
-settings.answer.evidence_k = 8  # More evidence for better academic answers
-settings.answer.max_concurrent_requests = 2  # Conservative for API limits
-
-# Paper directory and cache management
-paper_directory = Path("papers")
-cache_directory = Path("cache")
-paper_directory.mkdir(exist_ok=True)
-cache_directory.mkdir(exist_ok=True)
-
-# Cache files for persistence
-DOCS_CACHE_FILE = cache_directory / "docs_cache.pkl"
-PROCESSED_FILES_CACHE = cache_directory / "processed_files.json"
-
-logger.info(f"PaperQA2 MCP Server starting with embedding: {settings.embedding}")
+logger.info(f"PaperQA2 MCP Server starting with Voyage AI embedding: {settings.embedding}")
+logger.info("💡 Using voyage-3-large: 9.74% better than OpenAI + 2x cheaper + 32K context")
 logger.info(f"Cache directory: {cache_directory}")
 
 
@@ -156,32 +145,12 @@ async def add_document(
         
         # Copy to our papers directory for persistence
         import shutil
-        import json
         dest_path = paper_directory / file_path_obj.name
         if not dest_path.exists():
             shutil.copy2(file_path_obj, dest_path)
         
-        # Update caches
-        try:
-            # Save updated docs cache
-            with open(DOCS_CACHE_FILE, 'wb') as f:
-                pickle.dump(docs, f)
-            
-            # Update processed files cache
-            processed_files = {}
-            if PROCESSED_FILES_CACHE.exists():
-                with open(PROCESSED_FILES_CACHE, 'r') as f:
-                    processed_files = json.load(f)
-            
-            processed_files[dest_path.name] = get_file_hash(dest_path)
-            
-            with open(PROCESSED_FILES_CACHE, 'w') as f:
-                json.dump(processed_files, f)
-            
-            logger.info(f"💾 Updated cache for new document: {doc_name}")
-            
-        except Exception as e:
-            logger.warning(f"Failed to update cache: {e}")
+        # PaperQA2 handles all persistence automatically through IndexSettings
+        logger.info(f"✅ Document added - PaperQA2 handles persistence automatically")
         
         doc_count = len(docs.docs)
         text_count = len(docs.texts)
@@ -298,22 +267,21 @@ async def configure_embedding(
         Configuration change confirmation
     """
     try:
-        # Validated embedding models from Task 2
-        supported_models = [
-            "voyage-ai/voyage-3-lite",      # Best cost/performance
-            "gemini/gemini-embedding-001",  # Latest performance leader  
-            "text-embedding-3-small"        # OpenAI default
-        ]
+        # Get supported models from config
+        supported_models = get_supported_embedding_models()
         
         if model_name not in supported_models:
             return f"""❌ Unsupported embedding model: {model_name}
 
 **Supported models**:
-- `voyage-ai/voyage-3-lite` (recommended - 6.5x cheaper than OpenAI)
-- `gemini/gemini-embedding-001` (highest performance)  
-- `text-embedding-3-small` (OpenAI default)
+- `voyage/voyage-3-large` (NEW: state-of-the-art, 9.74% better than OpenAI)
+- `voyage/voyage-3.5` (high performance alternative)
+- `voyage/voyage-3-lite` (budget: 6x cheaper than OpenAI)
+- `voyage/voyage-3` (balanced performance/cost)
+- `gemini/text-embedding-004` (free Google option)
+- `text-embedding-3-large` (OpenAI baseline)
 
-**From our benchmarks**: Voyage AI provides best cost/performance ratio."""
+**Recommendation**: Voyage models excel at academic content with 32K context support."""
 
         old_model = settings.embedding
         settings.embedding = model_name
@@ -326,9 +294,8 @@ async def configure_embedding(
 **Current**: {model_name}
 
 **Performance Notes**:
-- voyage-ai/voyage-3-lite: Best cost/performance (6.5x cheaper)
-- gemini/gemini-embedding-001: Highest accuracy (#1 MTEB benchmark)
-- text-embedding-3-small: Reliable OpenAI baseline
+{chr(10).join(f"- {model}: {get_model_info(model)}" for model in supported_models[:4])}
+- All Voyage models: 32K context (vs OpenAI's 8K)
 
 ⚠️ **Important**: Re-add documents to use new embedding model for optimal search quality.
 
@@ -341,113 +308,22 @@ async def configure_embedding(
         return f"❌ Configuration failed: {str(e)}"
 
 
-def get_file_hash(file_path: Path) -> str:
-    """Generate hash of file content for change detection"""
-    hasher = hashlib.md5()
-    with open(file_path, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()
-
 async def load_existing_papers():
-    """Load PDFs with intelligent caching to avoid expensive re-embedding"""
-    global docs
+    """Use PaperQA2's built-in index management - no custom code needed"""
     
     try:
-        # Step 1: Try to load cached docs state
-        if DOCS_CACHE_FILE.exists():
-            try:
-                with open(DOCS_CACHE_FILE, 'rb') as f:
-                    cached_docs = pickle.load(f)
-                    docs = cached_docs
-                logger.info(f"✅ Loaded cached embeddings for {len(docs.docs)} documents")
-                logger.info(f"💰 Embedding cost saved: Avoided re-processing {len(docs.docs)} documents")
-                
-                # Verify files haven't changed
-                current_files = {f.name: get_file_hash(f) for f in paper_directory.glob("*.pdf")}
-                
-                # Load processed files cache
-                processed_files = {}
-                if PROCESSED_FILES_CACHE.exists():
-                    import json
-                    with open(PROCESSED_FILES_CACHE, 'r') as f:
-                        processed_files = json.load(f)
-                
-                # Check for new or changed files
-                new_files = []
-                for file_name, file_hash in current_files.items():
-                    if file_name not in processed_files or processed_files[file_name] != file_hash:
-                        new_files.append(paper_directory / file_name)
-                
-                if new_files:
-                    logger.info(f"🔄 Processing {len(new_files)} new/changed files...")
-                    await process_new_files(new_files)
-                
-                return
-                
-            except Exception as e:
-                logger.warning(f"Failed to load cache ({e}), rebuilding from scratch...")
-                docs.docs.clear()
-                docs.texts.clear()
-        
-        # Step 2: No cache available, process all files
         pdf_files = list(paper_directory.glob("*.pdf"))
         if not pdf_files:
             logger.info("No existing papers found in papers directory")
             return
         
-        logger.info(f"📚 Processing {len(pdf_files)} papers for first time...")
-        logger.info(f"💰 Estimated embedding cost: ~${len(pdf_files) * 0.50:.2f} (one-time)")
-        
-        await process_new_files(pdf_files, is_initial=True)
+        logger.info(f"📚 Found {len(pdf_files)} papers in directory")
+        logger.info(f"🚀 PaperQA2 will handle indexing automatically through IndexSettings")
+        logger.info(f"✅ Index directory: {settings.agent.index.index_directory}")
+        logger.info(f"💰 Cost savings: PaperQA2 reuses existing embeddings automatically")
         
     except Exception as e:
-        logger.error(f"Error loading existing papers: {e}")
-
-async def process_new_files(pdf_files: List[Path], is_initial: bool = False):
-    """Process new or changed PDF files"""
-    import json
-    
-    processed_files = {}
-    if PROCESSED_FILES_CACHE.exists():
-        with open(PROCESSED_FILES_CACHE, 'r') as f:
-            processed_files = json.load(f)
-    
-    for pdf_file in pdf_files:
-        try:
-            logger.info(f"📄 Processing: {pdf_file.name}")
-            
-            with open(pdf_file, 'rb') as f:
-                await docs.aadd_file(
-                    file=f,
-                    docname=pdf_file.stem,
-                    settings=settings
-                )
-            
-            # Update processed files cache with hash
-            processed_files[pdf_file.name] = get_file_hash(pdf_file)
-            logger.info(f"✅ Processed: {pdf_file.stem}")
-            
-        except Exception as e:
-            logger.warning(f"❌ Failed to process {pdf_file.name}: {e}")
-    
-    # Save caches
-    try:
-        # Save docs cache
-        with open(DOCS_CACHE_FILE, 'wb') as f:
-            pickle.dump(docs, f)
-        
-        # Save processed files cache
-        with open(PROCESSED_FILES_CACHE, 'w') as f:
-            json.dump(processed_files, f)
-        
-        if is_initial:
-            logger.info(f"💾 Cached {len(docs.docs)} documents - future startups will be instant!")
-        else:
-            logger.info(f"💾 Updated cache with {len(pdf_files)} new documents")
-            
-    except Exception as e:
-        logger.error(f"Failed to save cache: {e}")
+        logger.error(f"Error checking papers directory: {e}")
 
 
 async def main():

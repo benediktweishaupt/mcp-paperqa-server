@@ -43,7 +43,11 @@ async def test_server_basic_functionality():
         print(f"✅ All 4 tools registered: {tool_names}")
         
         # Test 3: Settings validation
-        assert settings.embedding in ["voyage-ai/voyage-3-lite", "gemini/gemini-embedding-001", "text-embedding-3-small"]
+        supported_embeddings = [
+            "voyage/voyage-3-large", "voyage/voyage-3.5", "voyage/voyage-3-lite", "voyage/voyage-3",
+            "gemini/text-embedding-004", "text-embedding-3-large", "text-embedding-3-small"
+        ]
+        assert settings.embedding in supported_embeddings
         print(f"✅ Settings valid (embedding: {settings.embedding})")
         
         # Clear state for testing
@@ -59,15 +63,15 @@ async def test_server_basic_functionality():
         
         # Test 5: Configuration change
         original_model = settings.embedding
-        config_result = await configure_embedding("gemini/gemini-embedding-001")
+        config_result = await configure_embedding("voyage/voyage-3-lite")
         assert "✅ Embedding model updated" in config_result
-        assert settings.embedding == "gemini/gemini-embedding-001"
+        assert settings.embedding == "voyage/voyage-3-lite"
         print("✅ Configuration change works")
         
         # Test 6: Configuration validation
         invalid_config = await configure_embedding("invalid-model")
         assert "❌ Unsupported embedding model" in invalid_config
-        assert "voyage-ai/voyage-3-lite" in invalid_config
+        assert "voyage/voyage-3-large" in invalid_config
         print("✅ Configuration validation works")
         
         # Reset to original

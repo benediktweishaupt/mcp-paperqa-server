@@ -1,7 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_SKIP_CONFIRMATION": "true"
+  },
   "permissions": {
-    "allow": ["*"],
+    "allow": [
+      "*"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(:(){ :|:& };:)",
+      "Bash(*dd*of=/dev/*)",
+      "Bash(mkfs*)",
+      "Bash(shutdown*)",
+      "Bash(reboot*)",
+      "Bash(*> /etc/passwd)",
+      "Bash(*> /etc/shadow)",
+      "Bash(*> /etc/sudoers)"
+    ],
     "ask": [
       "Bash(rm -rf .git)",
       "Bash(rm -rf src)",
@@ -16,21 +33,9 @@
       "Bash(*DROP DATABASE*)",
       "Bash(*TRUNCATE*)"
     ],
-    "deny": [
-      "Bash(rm -rf /)",
-      "Bash(rm -rf ~)",
-      "Bash(:(){ :|:& };:)",
-      "Bash(*dd*of=/dev/*)",
-      "Bash(mkfs*)",
-      "Bash(shutdown*)",
-      "Bash(reboot*)",
-      "Bash(*> /etc/passwd)",
-      "Bash(*> /etc/shadow)",
-      "Bash(*> /etc/sudoers)"
+    "additionalDirectories": [
+      "/Users/benediktw/Documents/gitHub"
     ]
   },
-  "defaultMode": "acceptEdits",
-  "env": {
-    "CLAUDE_CODE_SKIP_CONFIRMATION": "true"
-  }
+  "defaultMode": "acceptEdits"
 }
