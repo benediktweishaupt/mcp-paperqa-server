@@ -9,6 +9,8 @@ through the MCP protocol without complex bridge architectures.
 
 import asyncio
 import logging
+import pickle
+import hashlib
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -38,11 +40,18 @@ settings = Settings(
 settings.answer.evidence_k = 8  # More evidence for better academic answers
 settings.answer.max_concurrent_requests = 2  # Conservative for API limits
 
-# Paper directory management
+# Paper directory and cache management
 paper_directory = Path("papers")
+cache_directory = Path("cache")
 paper_directory.mkdir(exist_ok=True)
+cache_directory.mkdir(exist_ok=True)
+
+# Cache files for persistence
+DOCS_CACHE_FILE = cache_directory / "docs_cache.pkl"
+PROCESSED_FILES_CACHE = cache_directory / "processed_files.json"
 
 logger.info(f"PaperQA2 MCP Server starting with embedding: {settings.embedding}")
+logger.info(f"Cache directory: {cache_directory}")
 
 
 @server.tool()
@@ -147,9 +156,32 @@ async def add_document(
         
         # Copy to our papers directory for persistence
         import shutil
+        import json
         dest_path = paper_directory / file_path_obj.name
         if not dest_path.exists():
             shutil.copy2(file_path_obj, dest_path)
+        
+        # Update caches
+        try:
+            # Save updated docs cache
+            with open(DOCS_CACHE_FILE, 'wb') as f:
+                pickle.dump(docs, f)
+            
+            # Update processed files cache
+            processed_files = {}
+            if PROCESSED_FILES_CACHE.exists():
+                with open(PROCESSED_FILES_CACHE, 'r') as f:
+                    processed_files = json.load(f)
+            
+            processed_files[dest_path.name] = get_file_hash(dest_path)
+            
+            with open(PROCESSED_FILES_CACHE, 'w') as f:
+                json.dump(processed_files, f)
+            
+            logger.info(f"💾 Updated cache for new document: {doc_name}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to update cache: {e}")
         
         doc_count = len(docs.docs)
         text_count = len(docs.texts)
@@ -309,32 +341,113 @@ async def configure_embedding(
         return f"❌ Configuration failed: {str(e)}"
 
 
+def get_file_hash(file_path: Path) -> str:
+    """Generate hash of file content for change detection"""
+    hasher = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
 async def load_existing_papers():
-    """Load any PDFs already in the papers directory on startup"""
+    """Load PDFs with intelligent caching to avoid expensive re-embedding"""
+    global docs
+    
     try:
+        # Step 1: Try to load cached docs state
+        if DOCS_CACHE_FILE.exists():
+            try:
+                with open(DOCS_CACHE_FILE, 'rb') as f:
+                    cached_docs = pickle.load(f)
+                    docs = cached_docs
+                logger.info(f"✅ Loaded cached embeddings for {len(docs.docs)} documents")
+                logger.info(f"💰 Embedding cost saved: Avoided re-processing {len(docs.docs)} documents")
+                
+                # Verify files haven't changed
+                current_files = {f.name: get_file_hash(f) for f in paper_directory.glob("*.pdf")}
+                
+                # Load processed files cache
+                processed_files = {}
+                if PROCESSED_FILES_CACHE.exists():
+                    import json
+                    with open(PROCESSED_FILES_CACHE, 'r') as f:
+                        processed_files = json.load(f)
+                
+                # Check for new or changed files
+                new_files = []
+                for file_name, file_hash in current_files.items():
+                    if file_name not in processed_files or processed_files[file_name] != file_hash:
+                        new_files.append(paper_directory / file_name)
+                
+                if new_files:
+                    logger.info(f"🔄 Processing {len(new_files)} new/changed files...")
+                    await process_new_files(new_files)
+                
+                return
+                
+            except Exception as e:
+                logger.warning(f"Failed to load cache ({e}), rebuilding from scratch...")
+                docs.docs.clear()
+                docs.texts.clear()
+        
+        # Step 2: No cache available, process all files
         pdf_files = list(paper_directory.glob("*.pdf"))
         if not pdf_files:
             logger.info("No existing papers found in papers directory")
             return
         
-        logger.info(f"Loading {len(pdf_files)} existing papers...")
+        logger.info(f"📚 Processing {len(pdf_files)} papers for first time...")
+        logger.info(f"💰 Estimated embedding cost: ~${len(pdf_files) * 0.50:.2f} (one-time)")
         
-        for pdf_file in pdf_files:
-            try:
-                with open(pdf_file, 'rb') as f:
-                    await docs.aadd_file(
-                        file=f,
-                        docname=pdf_file.stem,
-                        settings=settings
-                    )
-                logger.info(f"Loaded: {pdf_file.stem}")
-            except Exception as e:
-                logger.warning(f"Failed to load {pdf_file.name}: {e}")
-        
-        logger.info(f"Successfully loaded {len(docs.docs)} papers")
+        await process_new_files(pdf_files, is_initial=True)
         
     except Exception as e:
         logger.error(f"Error loading existing papers: {e}")
+
+async def process_new_files(pdf_files: List[Path], is_initial: bool = False):
+    """Process new or changed PDF files"""
+    import json
+    
+    processed_files = {}
+    if PROCESSED_FILES_CACHE.exists():
+        with open(PROCESSED_FILES_CACHE, 'r') as f:
+            processed_files = json.load(f)
+    
+    for pdf_file in pdf_files:
+        try:
+            logger.info(f"📄 Processing: {pdf_file.name}")
+            
+            with open(pdf_file, 'rb') as f:
+                await docs.aadd_file(
+                    file=f,
+                    docname=pdf_file.stem,
+                    settings=settings
+                )
+            
+            # Update processed files cache with hash
+            processed_files[pdf_file.name] = get_file_hash(pdf_file)
+            logger.info(f"✅ Processed: {pdf_file.stem}")
+            
+        except Exception as e:
+            logger.warning(f"❌ Failed to process {pdf_file.name}: {e}")
+    
+    # Save caches
+    try:
+        # Save docs cache
+        with open(DOCS_CACHE_FILE, 'wb') as f:
+            pickle.dump(docs, f)
+        
+        # Save processed files cache
+        with open(PROCESSED_FILES_CACHE, 'w') as f:
+            json.dump(processed_files, f)
+        
+        if is_initial:
+            logger.info(f"💾 Cached {len(docs.docs)} documents - future startups will be instant!")
+        else:
+            logger.info(f"💾 Updated cache with {len(pdf_files)} new documents")
+            
+    except Exception as e:
+        logger.error(f"Failed to save cache: {e}")
 
 
 async def main():
