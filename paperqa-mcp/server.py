@@ -18,9 +18,9 @@ from mcp.server.fastmcp import FastMCP, Context
 from mcp.server.session import ServerSession
 from mcp.types import Tool, TextContent
 
-# PaperQA2 imports - using sync API to avoid asyncio conflicts
+# PaperQA2 imports - using async API for proper integration
 from paperqa import Settings, Docs
-from paperqa.agents import ask  # Sync wrapper for agent_query
+from paperqa.agents.main import agent_query  # Async API for proper FastMCP integration
 from paperqa.settings import AgentSettings, IndexSettings
 import paperqa
 
@@ -109,11 +109,10 @@ async def search_literature(
         # Progress: Searching papers
         await ctx.report_progress(progress=0.3, total=1.0, message="Searching academic papers...")
         
-        # Use PaperQA2's sync API to avoid asyncio conflicts
-        # The ask() function uses run_or_ensure() which handles sync execution properly
+        # Use PaperQA2's async API for proper FastMCP integration
         await ctx.report_progress(progress=0.5, total=1.0, message="Analyzing evidence and generating answer...")
         
-        result = ask(
+        result = await agent_query(
             query=query,
             settings=current_settings
         )
@@ -121,10 +120,10 @@ async def search_literature(
         # Progress: Formatting results
         await ctx.report_progress(progress=0.9, total=1.0, message="Formatting research results...")
         
-        # Format comprehensive response
-        answer = result.answer
-        cost = result.cost
-        source_count = len(result.contexts)
+        # Format comprehensive response - use correct session access pattern
+        answer = result.session.answer
+        cost = result.session.cost
+        source_count = len(result.session.contexts)
         
         response = f"""# Literature Search Results
 

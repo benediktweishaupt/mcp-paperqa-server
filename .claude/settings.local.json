@@ -6,7 +6,9 @@
   "permissions": {
     "allow": [
       "*",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__context7__get-library-docs",
+      "Bash(python test_paperqa_api.py)"
     ],
     "deny": [
       "Bash(rm -rf /)",

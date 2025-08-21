@@ -164,3 +164,9 @@ academic-mcp-server/
 @./.taskmaster/CLAUDE.md
 
 - No unnecessary custom builds
+
+**For debugging:**
+lets plan this debugging carefully. looking in the commit history and how many new packages came in, this does not look reasonable. │
+please check:'/Users/benediktw/Documents/gitHub/academic-research-assistant/docs/mcp-server-debugging-report.md' what hase been tried so far.\ │
+also check the most recent logs: │
+/Users/benediktw/Library/Logs/Claude
