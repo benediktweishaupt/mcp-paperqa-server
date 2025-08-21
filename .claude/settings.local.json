@@ -26,7 +26,8 @@
       "Bash(python:*)",
       "mcp__context7__get-library-docs",
       "mcp__paperqa-academic__search_literature",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
