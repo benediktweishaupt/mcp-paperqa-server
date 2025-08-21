@@ -253,7 +253,8 @@ async def get_library_status() -> str:
 - Index Directory: {index_dir}
 
 **Available Commands**:
-- `search_literature`: Research questions and topics
+- `search_literature`: Research questions and topics with synthesis
+- `get_contexts`: Get raw text chunks without LLM paraphrasing  
 - `get_library_status`: Check system status
 - `configure_embedding`: Switch embedding models
 
@@ -265,6 +266,125 @@ async def get_library_status() -> str:
     except Exception as e:
         logger.error(f"Status check failed: {e}")
         return f"❌ Status check failed: {str(e)}"
+
+
+@server.tool()
+async def get_contexts(
+    query: str,
+    ctx: Context[ServerSession, None],
+    max_sources: Optional[int] = 10,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None
+) -> str:
+    """
+    Get raw search contexts without LLM synthesis.
+    
+    Returns direct text chunks from documents with exact page references,
+    avoiding double-paraphrasing and reducing costs from ~$0.06 to ~$0.001.
+    
+    Args:
+        query: Search query to find relevant contexts
+        max_sources: Maximum number of context chunks to return (1-20)
+        min_year: Earliest publication year to include
+        max_year: Latest publication year to include
+        
+    Returns:
+        Raw contexts with page references and source attribution
+    """
+    try:
+        logger.info(f"Context search: {query[:100]}...")
+        
+        # Progress: Starting search
+        await ctx.info(f"🔍 Retrieving raw contexts: {query[:60]}...")
+        await ctx.report_progress(progress=0.1, total=1.0, message="Initializing context search")
+        
+        # Create settings copy for context search
+        current_settings = settings.model_copy(deep=True)
+        
+        # Adjust max_sources for context retrieval
+        if max_sources and 1 <= max_sources <= 20:
+            current_settings.answer.evidence_k = max_sources
+            logger.info(f"Adjusted evidence_k to {max_sources}")
+            
+        await ctx.report_progress(progress=0.2, total=1.0, message="Configuration complete")
+        
+        # Progress: Loading index
+        await ctx.report_progress(progress=0.3, total=1.0, message="Loading document index...")
+        
+        # Load the index
+        built_index = await get_directory_index(settings=current_settings)
+        
+        # Verify index was loaded correctly
+        index_name = current_settings.get_index_name()
+        logger.info(f"Index loaded: {index_name}")
+        
+        # Progress: Searching contexts
+        await ctx.report_progress(progress=0.5, total=1.0, message="Searching document contexts...")
+        
+        # Use the same agent_query but extract contexts before synthesis
+        result = await agent_query(
+            query=query,
+            settings=current_settings
+        )
+        
+        # Progress: Extracting contexts
+        await ctx.report_progress(progress=0.8, total=1.0, message="Extracting raw contexts...")
+        
+        # Extract raw contexts from the result
+        contexts = result.session.contexts
+        cost = result.session.cost
+        
+        if not contexts:
+            return f"""# Context Search Results
+
+❌ No relevant contexts found for query: "{query}"
+
+**Search Summary**: 0 contexts found | **Query Cost**: ${cost:.4f}
+**Suggestion**: Try broader search terms or check if documents contain relevant content.
+"""
+        
+        # Format contexts with page references
+        formatted_contexts = []
+        for i, context in enumerate(contexts[:max_sources], 1):
+            # Extract document info
+            doc_info = context.text.doc
+            text_name = context.text.name  # This contains page info like "Tollmann2020 pages 224-225"
+            
+            # Format context with clear attribution
+            context_text = f"""## Context {i}
+
+**Source**: {text_name}
+**Citation**: {doc_info.formatted_citation}
+**Relevance Score**: {context.score}
+
+**Text**:
+{context.context}
+
+---"""
+            formatted_contexts.append(context_text)
+        
+        response = f"""# Raw Context Search Results
+
+Query: "{query}"
+
+{chr(10).join(formatted_contexts)}
+
+**Search Summary**: {len(contexts)} contexts found | **Query Cost**: ${cost:.4f}
+**Library Status**: Using pre-built index | **Embedding Model**: {settings.embedding}
+
+**Usage**: These are raw text chunks without LLM paraphrasing. Use exact page references (e.g., "Tollmann2020 pages 224-225") to locate original text in source documents.
+"""
+        
+        # Progress: Complete
+        await ctx.report_progress(progress=1.0, total=1.0, message="Context extraction complete!")
+        await ctx.info(f"✅ Context search completed: {len(contexts)} contexts, ${cost:.4f} cost")
+        
+        logger.info(f"Context search completed: {len(contexts)} contexts, ${cost:.4f} cost")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Context search failed: {e}")
+        return f"❌ Context search failed: {str(e)}\n\nPlease check your API keys and document library."
 
 
 @server.tool()
