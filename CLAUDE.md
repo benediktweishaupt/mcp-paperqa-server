@@ -148,3 +148,5 @@ lets plan this debugging carefully. looking in the commit history and how many n
 please check:'/Users/benediktw/Documents/gitHub/academic-research-assistant/docs/mcp-server-debugging-report.md' what hase been tried so far.\ │
 also check the most recent logs: │
 /Users/benediktw/Library/Logs/Claude
+
+- never build or rebuild indexes without asking me. this costs money.
