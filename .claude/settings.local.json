@@ -27,7 +27,8 @@
       "mcp__context7__get-library-docs",
       "mcp__paperqa-academic__search_literature",
       "Bash(git checkout:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(mv:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
