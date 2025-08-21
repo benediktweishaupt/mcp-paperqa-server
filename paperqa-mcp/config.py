@@ -56,9 +56,10 @@ def get_paperqa_settings(base_dir: Path = None) -> Settings:
         
         # Quality-focused answer generation
         answer=AnswerSettings(
-            evidence_k=8,                    # More evidence for comprehensive answers
-            answer_max_sources=5,            # Detailed source attribution
+            evidence_k=15,                   # More evidence for comprehensive answers
+            answer_max_sources=10,           # More detailed source attribution
             max_concurrent_requests=2,       # Conservative for API limits
+            evidence_skip_summary=True,      # CRITICAL: Skip paraphrasing, return direct quotes
         )
     )
     
