@@ -21,6 +21,7 @@ from mcp.types import Tool, TextContent
 # PaperQA2 imports - using async API for proper integration
 from paperqa import Settings, Docs
 from paperqa.agents.main import agent_query  # Async API for proper FastMCP integration
+from paperqa.agents.search import get_directory_index  # Required for index loading
 from paperqa.settings import AgentSettings, IndexSettings
 import paperqa
 
@@ -99,22 +100,38 @@ async def search_literature(
         await ctx.info(f"🔍 Starting literature search: {query[:60]}...")
         await ctx.report_progress(progress=0.1, total=1.0, message="Initializing research query")
         
+        # Create a copy of settings to avoid mutating the global settings object
+        # This follows PaperQA2 best practices for settings management
+        current_settings = settings.model_copy(deep=True)
+        
         # Adjust settings based on parameters
-        current_settings = settings
         if max_sources and 1 <= max_sources <= 15:
             current_settings.answer.evidence_k = max_sources
+            logger.info(f"Adjusted evidence_k to {max_sources}")
             
         await ctx.report_progress(progress=0.2, total=1.0, message="Configuration complete")
         
-        # Progress: Searching papers
-        await ctx.report_progress(progress=0.3, total=1.0, message="Searching academic papers...")
+        # Progress: Loading index
+        await ctx.report_progress(progress=0.3, total=1.0, message="Loading document index...")
         
-        # Use PaperQA2's async API for proper FastMCP integration
-        await ctx.report_progress(progress=0.5, total=1.0, message="Analyzing evidence and generating answer...")
+        # Build/load the index first - this updates the settings object with the correct index
+        # Following PaperQA2 pattern from documentation snippet #35
+        built_index = await get_directory_index(settings=current_settings)
+        
+        # Verify index was loaded correctly
+        index_name = current_settings.get_index_name()
+        logger.info(f"Index loaded: {index_name}")
+        logger.info(f"Index files: {await built_index.index_files}")
+        
+        # Progress: Searching papers
+        await ctx.report_progress(progress=0.5, total=1.0, message="Searching academic papers...")
+        
+        # Use PaperQA2's async API with the settings object that now contains the loaded index
+        await ctx.report_progress(progress=0.7, total=1.0, message="Analyzing evidence and generating answer...")
         
         result = await agent_query(
             query=query,
-            settings=current_settings
+            settings=current_settings  # This now contains the loaded index information
         )
         
         # Progress: Formatting results
