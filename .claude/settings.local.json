@@ -28,7 +28,8 @@
       "mcp__paperqa-academic__search_literature",
       "Bash(git checkout:*)",
       "Bash(mkdir:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(git add:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

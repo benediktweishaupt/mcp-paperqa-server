@@ -9,6 +9,9 @@ dev-debug.log
 # Dependency directories
 node_modules/
 
+# Do not share the papers if not clear that all are allowing this
+paperqa-mcp/papers/
+
 # Environment variables
 .env
 .mpc*
