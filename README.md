@@ -2,238 +2,190 @@
 
 **AI-powered research through your academic library using Claude Desktop**
 
-Transform your PhD research workflow: Instead of manually searching through 30+ academic texts, have natural conversations with Claude to find relevant passages, track arguments across authors, and generate properly formatted citations.
+Transform your PhD research workflow: Natural conversations with Claude to find relevant passages, track arguments across authors, and generate properly formatted citations from your personal academic library.
 
-## 🎯 Overview
+## ⚡ Quick Setup
 
-This project provides a production-ready MCP server that transforms how PhD students interact with their research library through Claude. Instead of manually searching through academic texts, students can have natural conversations with Claude to find relevant passages, track arguments across authors, and generate properly formatted citations.
+### Prerequisites
+- Python 3.11+
+- OpenAI API key (required)
+- Voyage AI API key (recommended for 6x cost savings)
 
-### Key Benefits
-- **Reduce literature review time** from hours to minutes
-- **Zero citation errors** with verified source attribution
-- **Comprehensive coverage** through AI-powered semantic search
-- **Production-ready** lean implementation (256 lines vs 500+ complex alternatives)
-
-## ⚡ Quick Start
-
+### Installation
 ```bash
-# 1. Install dependencies  
+git clone <repository-url>
+cd academic-research-assistant
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-
-# 2. Set up API keys (copy .env.example to .env)
-cp .env.example .env
-# Edit .env with your OpenAI and Voyage AI keys
-
-# 3. Add your PDF books
-cp your-books/*.pdf paperqa-mcp/papers/
-
-# 4. Start the server
-python3 paperqa-mcp/server.py
 ```
 
-**Detailed setup**: See `TODO_SETUP.md` for step-by-step instructions.
+### Configure API Keys
+```bash
+cp .env.example .env
+# Edit .env with your keys:
+# OPENAI_API_KEY=your-key-here
+# VOYAGE_API_KEY=your-key-here
+```
 
-### First Research Session
+## 📄 Document Processing
 
-1. **Add your PDFs:**
-   - "Add the PDF `/path/to/important_paper.pdf` to my research library"
+### Modern PDFs (Text-Ready)
+```bash
+# 1. Add PDFs to library
+cp your-papers/*.pdf paperqa-mcp/papers/
 
-2. **Start researching:**
-   - "What does Luhmann say about autopoiesis in social systems?"
-   - "Show me contradictions between different authors on this topic"
-   - "What research gaps exist in social media and systems theory?"
+# 2. Build search index (~$3-5 cost)
+python archive/utilities/build_index.py
+
+# 3. Start MCP server
+python paperqa-mcp/server.py
+```
+
+### Scanned PDFs (Need OCR)
+```bash
+# 1. Check which PDFs need OCR
+python archive/utilities/test_pdf_text.py
+
+# 2. Install OCR tools (one-time)
+brew install tesseract ocrmypdf  # macOS
+
+# 3. Convert scanned PDFs
+python archive/utilities/ocr_papers.py
+
+# 4. Build index and start server
+python archive/utilities/build_index.py
+python paperqa-mcp/server.py
+```
+
+## 🔌 Claude Desktop Setup
+
+Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "paperqa-academic": {
+      "command": "python",
+      "args": ["paperqa-mcp/server.py"],
+      "cwd": "/path/to/academic-research-assistant",
+      "env": {
+        "OPENAI_API_KEY": "your-key",
+        "VOYAGE_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+## 🎯 Usage
+
+### Research Queries
+```
+"What's the current status of my research library?"
+"What does Hito Steyerl write about truth and representation?"
+"Find papers that mention both neural networks and interpretability"
+"Compare methodological approaches across my papers"
+```
+
+### Example Output
+```
+# Literature Search Results
+
+Hito Steyerl examines truth and representation in documentary practices...
+[Detailed analysis with proper academic citations]
+
+---
+Research Summary: 5 evidence sources analyzed | Query Cost: $0.0373
+Library Status: Using pre-built index | Embedding Model: text-embedding-3-small
+```
 
 ## 🛠 Core Features
 
-### 🔍 Literature Search (`search_literature`)
-Performs comprehensive academic research using PaperQA2's agent workflow:
-- **Multi-step reasoning** with evidence gathering
-- **Semantic search** across your entire library  
-- **Proper citations** with page/paragraph attribution
-- **Cost tracking** and performance metrics
+- **Literature Search**: Multi-source analysis with citations
+- **Library Status**: Document count, storage, configuration
+- **Embedding Config**: Switch between cost/performance models
 
-**Example:**
+## 🏗 Architecture
+
+**Current Structure:**
 ```
-Query: "What is the effectiveness of machine learning approaches in academic research?"
+paperqa-mcp/
+├── server.py                # Main MCP server (FastMCP + PaperQA2)
+├── config.py               # Settings and model configuration
+├── papers/                 # Your PDF library
+└── cache/index/           # Pre-built search indices
 
-Response: 
-Based on the academic literature analysis, machine learning approaches demonstrate 
-significant effectiveness in academic research applications. The evidence shows:
-
-1. **Performance Metrics**: Studies report 85-92% accuracy rates across different domains
-2. **Methodological Rigor**: Proper validation techniques are essential for reliable results  
-3. **Implementation Challenges**: Data quality and model selection remain critical factors
-
----
-Research Summary: 8 evidence sources analyzed | Query Cost: $0.1270
-Library Status: 12 documents indexed | Embedding Model: voyage-ai/voyage-3-lite
+archive/utilities/          # Document processing scripts
+├── test_pdf_text.py       # OCR readiness detection
+├── ocr_papers.py          # Multi-language OCR processing
+├── build_index.py         # Index building with cost tracking
+└── rebuild_index.py       # Index rebuilding utility
 ```
 
-### 📄 Document Management (`add_document`)
-Adds PDF papers to your research library:
-- **Academic PDF processing** optimized for major publishers
-- **Automatic text extraction** and chunking
-- **Embedding generation** for semantic search
-- **Metadata extraction** and persistence
-
-### 📊 Library Status (`get_library_status`)
-Comprehensive library and system information:
-- **Document count** and text segments
-- **Storage usage** and configuration
-- **Model settings** and performance stats
-- **Available commands** and recommendations
-
-### ⚙️ Configuration (`configure_embedding`)
-Switch between validated embedding models:
-- **`voyage-ai/voyage-3-lite`** (recommended: 6.5x cheaper than OpenAI)
-- **`gemini/gemini-embedding-001`** (highest accuracy: #1 MTEB benchmark)
-- **`text-embedding-3-small`** (reliable OpenAI baseline)
-
-## 🔧 Architecture
-
-### Design Philosophy: Lean & Fast
-- **256 lines** of production-ready Python code
-- **Direct PaperQA2 integration** (no complex bridges)
-- **FastMCP server** for optimal Claude Desktop integration
-- **Zero dependencies** on external academic APIs
-
-### Technical Stack
-- **PaperQA2**: Production-ready academic RAG with agent workflow
-- **FastMCP**: Modern MCP server framework
-- **LiteLLM**: Universal LLM API interface
-- **Voyage/Gemini/OpenAI**: Validated embedding providers
-
-### Data Flow
-```
-Claude Desktop → MCP Protocol → FastMCP Server → PaperQA2 Agent → LLM/Embedding APIs
-                                      ↓
-                                Local PDF Library (papers/)
-```
-
-## 📋 Embedding Model Benchmarks
-
-Based on our testing with academic content:
-
-| Model | Performance | Cost/1M tokens | Speed | Recommendation |
-|-------|-------------|----------------|--------|----------------|
-| **Voyage-3.5-lite** | ⭐⭐⭐⭐ | $0.08 | Fast | **Best overall** |
-| **Gemini-embedding-001** | ⭐⭐⭐⭐⭐ | $0.10 | Fast | Highest accuracy |
-| **text-embedding-3-small** | ⭐⭐⭐ | $0.52 | Fast | Reliable baseline |
-
-*Voyage AI provides 6.5x cost savings compared to OpenAI while maintaining excellent academic performance.*
+**Design Philosophy:**
+- **Offline processing**: Heavy lifting (OCR, indexing) done separately
+- **Instant MCP**: Server loads pre-built indices in <1 second
+- **Cost transparent**: Know embedding costs upfront
+- **Production ready**: 256 lines, minimal dependencies
 
 ## 🧪 Testing
 
-### Run Integration Tests
 ```bash
-# Simple integration test (recommended)
-python3 tests/simple_integration_test.py
+# Check OCR needs
+python archive/utilities/test_pdf_text.py
 
-# Full test suite (requires pytest-asyncio)
-python3 tests/run_all_tests.py
+# Test MCP functionality
+python tests/run_all_tests.py
+
+# Full integration test
+python tests/test_paperqa_mcp_integration.py
 ```
 
-### Test Coverage
-- ✅ **Tool registration** and MCP protocol compliance
-- ✅ **API integration** with mocked responses  
-- ✅ **Error handling** and recovery scenarios
-- ✅ **Performance** and concurrent operations
-- ✅ **Configuration** management and validation
+## 🔧 Troubleshooting
 
-## 🚦 Production Deployment
-
-### Performance Targets (Achieved)
-- **Search response**: <3 seconds with full context
-- **Concurrent operations**: 10+ simultaneous queries
-- **Library scale**: 50+ PDFs (500MB-1GB)
-- **Citation accuracy**: 100% (zero tolerance for errors)
-
-### Monitoring
-The server provides detailed logging for:
-- Query processing times and costs
-- Embedding model performance
-- Document processing status  
-- Error tracking and recovery
-
-### Security
-- **Local data storage** (no cloud dependencies)
-- **API key isolation** through environment variables
-- **Input validation** for all file operations
-- **Error sanitization** prevents information leakage
-
-## 🔄 Development Workflow
-
-### Built with Task Master AI
-This project was developed using Task Master AI for systematic progress tracking:
-
-1. **Analysis Phase**: Research PaperQA2 vs custom implementation
-2. **Architecture Phase**: Design lean Python-only MCP server  
-3. **Implementation Phase**: Build and test core functionality
-4. **Testing Phase**: Comprehensive integration testing
-5. **Documentation Phase**: Production-ready documentation
-
-### Git Integration
-Each major milestone has been committed with detailed messages for full traceability.
-
-## 📚 Usage Examples
-
-### PhD Literature Review Workflow
-
-```
-# 1. Add your core papers
-"Add `/Users/student/papers/luhmann_social_systems.pdf` to my library"
-"Add `/Users/student/papers/parsons_action_theory.pdf` to my library"
-
-# 2. Explore theoretical development
-"Show me how the concept of social systems evolved from Parsons to Luhmann"
-
-# 3. Find contradictions and gaps
-"What contradictions exist between these authors on systemic boundaries?"
-"What aspects of digital communication in social systems remain unexplored?"
-
-# 4. Check your library status
-"What's the current status of my research library?"
+**Empty search results:**
+```bash
+ls paperqa-mcp/papers/                    # Check PDFs exist
+ls paperqa-mcp/cache/index/              # Check index built
+python archive/utilities/rebuild_index.py # Rebuild if needed
 ```
 
-### Conference Paper Research
-
+**OCR issues:**
+```bash
+brew install tesseract ocrmypdf           # Install OCR tools
+python archive/utilities/test_pdf_text.py # Test extraction
 ```
-# Quick literature search across your library
-"What do recent papers say about transformer architecture improvements?"
 
-# Focus on specific aspects
-"Find evidence for computational efficiency gains in attention mechanisms"
+**MCP connection:**
+- Verify Claude Desktop config path and Python paths
+- Check API keys in environment
+- Restart Claude Desktop after config changes
 
-# Export findings (copy from Claude's response)
-# Results include proper citations ready for reference managers
-```
+## 💰 Cost Management
+
+**Embedding Models (Academic Performance):**
+- **voyage-ai/voyage-3-lite**: $0.08/1M tokens (recommended)
+- **text-embedding-3-small**: $0.52/1M tokens (baseline)
+
+**Typical Costs:**
+- **Index building**: $3-5 per 50 academic papers (one-time)
+- **Research queries**: $0.02-0.05 per question
+- **50-paper library**: ~$10 total setup cost
+
+## 📚 Key Documents
+
+- `docs/indexing-and-ocr-analysis.md` - Complete workflow analysis
+- `docs/mcp-server-debugging-report.md` - Troubleshooting guide
+- `TODO_SETUP.md` - Detailed setup instructions
 
 ## 🤝 Contributing
 
-### Development Setup
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Make changes and test: `python3 tests/simple_integration_test.py`
-4. Commit changes: `git commit -m 'Add amazing feature'`
-5. Push and create Pull Request
-
-### Code Standards
-- **Python**: Black formatting, type hints
-- **Testing**: All new features must include tests
-- **Documentation**: Update README for user-facing changes
-- **Performance**: Maintain <3s search response time
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **PaperQA2** team for the excellent academic RAG foundation
-- **Anthropic** for the MCP protocol and Claude integration
-- **Voyage AI**, **Google**, and **OpenAI** for embedding APIs
-- **Task Master AI** for systematic development workflow
+1. Fork repository
+2. Create feature branch
+3. Test changes: `python tests/run_all_tests.py`
+4. Submit pull request
 
 ---
 
-**Ready to revolutionize your PhD research workflow? Start with the Quick Start guide above!**
+**Ready to revolutionize your PhD research? Start with the Quick Setup above!**

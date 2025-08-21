@@ -1,9 +1,2 @@
-# Academic Research Assistant - Python Dependencies
-
-# Core MCP and PaperQA2 packages
 paper-qa>=5.0.0
 mcp
-
-# Testing dependencies (optional)
-# pytest
-# pytest-asyncio

@@ -9,22 +9,49 @@ through the MCP protocol without complex bridge architectures.
 
 import asyncio
 import logging
+import os
+import sys
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.session import ServerSession
 from mcp.types import Tool, TextContent
 
-# PaperQA2 imports - using our validated PyPI package
-from paperqa import agent_query, Settings, Docs
+# PaperQA2 imports - using async API for proper integration
+from paperqa import Settings, Docs
+from paperqa.agents.main import agent_query  # Async API for proper FastMCP integration
+from paperqa.agents.search import get_directory_index  # Required for index loading
 from paperqa.settings import AgentSettings, IndexSettings
 import paperqa
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Setup logging - Configure to prevent stdout pollution for MCP
+# Redirect all logging to stderr to avoid breaking JSON-RPC protocol
+logging.basicConfig(
+    level=logging.WARNING,  # Reduce noise 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Redirect to stderr instead of stdout
+)
 logger = logging.getLogger(__name__)
 
+# Silence noisy PaperQA loggers that might pollute stdout
+logging.getLogger("paperqa").setLevel(logging.WARNING)
+logging.getLogger("paperqa.agents").setLevel(logging.WARNING)
+logging.getLogger("paperqa.agents.main").setLevel(logging.WARNING)
+logging.getLogger("paperqa.agents.main.agent_callers").setLevel(logging.ERROR)
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    logger.info("✅ Loaded environment variables from .env file")
+except ImportError:
+    logger.info("⚠️ python-dotenv not installed, using system environment variables only")
+
 # Import configuration
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
 from config import get_paperqa_settings, get_supported_embedding_models, get_model_info
 
 # Get optimized settings for academic research
@@ -46,6 +73,7 @@ logger.info(f"Cache directory: {cache_directory}")
 @server.tool()
 async def search_literature(
     query: str,
+    ctx: Context[ServerSession, None],
     max_sources: Optional[int] = 5,
     min_year: Optional[int] = None,
     max_year: Optional[int] = None
@@ -68,19 +96,48 @@ async def search_literature(
     try:
         logger.info(f"Literature search: {query[:100]}...")
         
+        # Progress: Starting research
+        await ctx.info(f"🔍 Starting literature search: {query[:60]}...")
+        await ctx.report_progress(progress=0.1, total=1.0, message="Initializing research query")
+        
+        # Create a copy of settings to avoid mutating the global settings object
+        # This follows PaperQA2 best practices for settings management
+        current_settings = settings.model_copy(deep=True)
+        
         # Adjust settings based on parameters
-        current_settings = settings
         if max_sources and 1 <= max_sources <= 15:
             current_settings.answer.evidence_k = max_sources
+            logger.info(f"Adjusted evidence_k to {max_sources}")
+            
+        await ctx.report_progress(progress=0.2, total=1.0, message="Configuration complete")
         
-        # Use PaperQA2's agent_query for full research workflow
+        # Progress: Loading index
+        await ctx.report_progress(progress=0.3, total=1.0, message="Loading document index...")
+        
+        # Build/load the index first - this updates the settings object with the correct index
+        # Following PaperQA2 pattern from documentation snippet #35
+        built_index = await get_directory_index(settings=current_settings)
+        
+        # Verify index was loaded correctly
+        index_name = current_settings.get_index_name()
+        logger.info(f"Index loaded: {index_name}")
+        logger.info(f"Index files: {await built_index.index_files}")
+        
+        # Progress: Searching papers
+        await ctx.report_progress(progress=0.5, total=1.0, message="Searching academic papers...")
+        
+        # Use PaperQA2's async API with the settings object that now contains the loaded index
+        await ctx.report_progress(progress=0.7, total=1.0, message="Analyzing evidence and generating answer...")
+        
         result = await agent_query(
             query=query,
-            settings=current_settings,
-            docs=docs
+            settings=current_settings  # This now contains the loaded index information
         )
         
-        # Format comprehensive response
+        # Progress: Formatting results
+        await ctx.report_progress(progress=0.9, total=1.0, message="Formatting research results...")
+        
+        # Format comprehensive response - use correct session access pattern
         answer = result.session.answer
         cost = result.session.cost
         source_count = len(result.session.contexts)
@@ -91,8 +148,12 @@ async def search_literature(
 
 ---
 **Research Summary**: {source_count} evidence sources analyzed | **Query Cost**: ${cost:.4f}
-**Library Status**: {len(docs.docs)} documents indexed | **Embedding Model**: {settings.embedding}
+**Library Status**: Using pre-built index | **Embedding Model**: {settings.embedding}
 """
+        
+        # Progress: Complete
+        await ctx.report_progress(progress=1.0, total=1.0, message="Research complete!")
+        await ctx.info(f"✅ Search completed: {source_count} sources, ${cost:.4f} cost")
         
         logger.info(f"Search completed: {source_count} sources, ${cost:.4f} cost")
         return response
@@ -102,75 +163,25 @@ async def search_literature(
         return f"❌ Literature search failed: {str(e)}\n\nPlease check your API keys and document library."
 
 
-@server.tool()
-async def add_document(
-    file_path: str,
-    document_name: Optional[str] = None
-) -> str:
-    """
-    Add a PDF document to the research library.
-    
-    The document will be processed, embedded, and made available for literature searches.
-    Supports academic PDFs from major publishers.
-    
-    Args:
-        file_path: Path to the PDF file to add
-        document_name: Optional custom name for the document
-        
-    Returns:
-        Status message with library information
-    """
-    try:
-        file_path_obj = Path(file_path)
-        
-        # Validation
-        if not file_path_obj.exists():
-            return f"❌ Error: File not found at {file_path}"
-        
-        if not file_path_obj.suffix.lower() == '.pdf':
-            return f"❌ Error: Only PDF files supported, got {file_path_obj.suffix}"
-        
-        # Use provided name or extract from filename
-        doc_name = document_name or file_path_obj.stem
-        
-        logger.info(f"Adding document: {doc_name}")
-        
-        # Add to PaperQA2 docs collection
-        with open(file_path_obj, 'rb') as f:
-            await docs.aadd_file(
-                file=f,
-                docname=doc_name,
-                settings=settings
-            )
-        
-        # Copy to our papers directory for persistence
-        import shutil
-        dest_path = paper_directory / file_path_obj.name
-        if not dest_path.exists():
-            shutil.copy2(file_path_obj, dest_path)
-        
-        # PaperQA2 handles all persistence automatically through IndexSettings
-        logger.info(f"✅ Document added - PaperQA2 handles persistence automatically")
-        
-        doc_count = len(docs.docs)
-        text_count = len(docs.texts)
-        
-        response = f"""✅ Successfully added document to library
-
-**Document**: {doc_name}
-**File**: {file_path}
-**Size**: {file_path_obj.stat().st_size:,} bytes
-
-**Library Status**: {doc_count} documents, {text_count} searchable segments
-**Ready for**: Literature search and citation queries
-"""
-        
-        logger.info(f"Document added: {doc_name} (total: {doc_count} docs)")
-        return response
-        
-    except Exception as e:
-        logger.error(f"Document upload failed: {e}")
-        return f"❌ Upload failed: {str(e)}"
+# Document indexing disabled - use build_index.py script instead
+# MCP servers have timeout issues with large document processing
+# 
+# @server.tool()
+# async def add_document(file_path: str, document_name: Optional[str] = None) -> str:
+#     """DISABLED: Use build_index.py script for document indexing instead."""
+#     return """❌ Document indexing via MCP is disabled
+# 
+# **Reason**: Large PDF processing causes MCP timeouts (>60 seconds)
+# 
+# **Solution**: Use the offline indexing script instead:
+# 
+# 1. Copy PDFs to: paperqa-mcp/papers/
+# 2. Run: python build_index.py
+# 3. Restart Claude Desktop
+# 4. Use search_literature tool
+# 
+# **Benefits**: Faster, more reliable, no timeout issues
+# """
 
 
 @server.tool()
@@ -178,66 +189,75 @@ async def get_library_status() -> str:
     """
     Get current status of the research library.
     
-    Returns comprehensive information about indexed documents, 
+    Returns comprehensive information about pre-built index, papers directory,
     configuration, and system status.
     
     Returns:
         Detailed library and system status
     """
     try:
-        doc_count = len(docs.docs)
-        text_count = len(docs.texts)
+        # Check paper directory and index
+        paper_files = list(paper_directory.glob("*.pdf"))
+        index_dir = Path(settings.agent.index.index_directory)
+        index_files = list(index_dir.glob("*")) if index_dir.exists() else []
         
-        if doc_count == 0:
-            return """📚 Research Library Status
+        # Calculate total storage
+        total_size = sum(pf.stat().st_size for pf in paper_files)
+        
+        if not paper_files:
+            return f"""📚 Research Library Status
 
-**Status**: Empty library
-**Documents**: 0 indexed
-**Recommendation**: Use `add_document` to upload PDF papers for research
+**Status**: No papers found
+**Paper Directory**: {paper_directory}
+**Index Status**: {len(index_files)} files in index
+
+**Setup Instructions**:
+1. Copy PDFs to: {paper_directory}
+2. Run: `python build_index.py`
+3. Restart Claude Desktop
+4. Use `search_literature` tool
 
 **Configuration**:
 - Embedding Model: {settings.embedding}
-- LLM Model: {settings.llm}  
-- Paper Directory: {paper_directory}
+- LLM Model: {settings.llm}
+- Index Directory: {index_dir}
+"""
 
-**Ready to**: Accept documents and begin research"""
-
-        # Get document details
-        doc_names = []
-        total_size = 0
+        # Status based on index availability
+        if not index_files:
+            status = "⚠️ Papers found but no index - run build_index.py"
+        else:
+            status = "✅ Ready for research"
         
-        for doc in docs.docs.values():
-            doc_names.append(doc.docname)
-        
-        # Check paper directory
-        paper_files = list(paper_directory.glob("*.pdf"))
-        for pf in paper_files:
-            total_size += pf.stat().st_size
-        
-        doc_summary = ", ".join(doc_names[:5])
-        if doc_count > 5:
-            doc_summary += f" and {doc_count - 5} more..."
+        # Get paper names for display
+        paper_names = [pf.stem for pf in paper_files[:5]]
+        paper_summary = ", ".join(paper_names)
+        if len(paper_files) > 5:
+            paper_summary += f" and {len(paper_files) - 5} more..."
         
         response = f"""📚 Research Library Status
 
 **Library Statistics**:
-- Documents: {doc_count} indexed  
-- Text Segments: {text_count:,} searchable chunks
-- Storage: {total_size / 1024 / 1024:.1f} MB in paper directory
-- Status: ✅ Ready for research
+- Papers: {len(paper_files)} PDFs in directory
+- Index Files: {len(index_files)} files
+- Storage: {total_size / 1024 / 1024:.1f} MB
+- Status: {status}
 
-**Documents**: {doc_summary}
+**Papers**: {paper_summary}
 
 **Configuration**:
-- Embedding Model: {settings.embedding}  
+- Embedding Model: {settings.embedding}
 - LLM Model: {settings.llm}
 - Evidence Sources: {settings.answer.evidence_k} per query
 - Paper Directory: {paper_directory}
+- Index Directory: {index_dir}
 
 **Available Commands**:
 - `search_literature`: Research questions and topics
-- `add_document`: Upload new PDF papers
+- `get_library_status`: Check system status
 - `configure_embedding`: Switch embedding models
+
+**Note**: Document indexing via MCP is disabled. Use `build_index.py` script instead.
 """
         
         return response
@@ -343,7 +363,22 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        # FastMCP server.run() handles its own async event loop
+        # No need for asyncio.run() wrapper - this causes conflicts
+        
+        logger.info(f"Starting PaperQA2 MCP Server v{paperqa.__version__}")
+        logger.info(f"Embedding model: {settings.embedding}")
+        logger.info(f"Paper directory: {paper_directory}")
+        
+        # Run startup synchronously first
+        import anyio
+        anyio.run(load_existing_papers)
+        
+        logger.info("PaperQA2 MCP Server ready - connecting to Claude Desktop...")
+        
+        # Run FastMCP server directly - it manages its own async loop
+        server.run()
+        
     except KeyboardInterrupt:
         logger.info("Server shutdown requested")
     except Exception as e:

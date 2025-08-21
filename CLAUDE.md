@@ -55,33 +55,15 @@ https://github.com/Future-House/paper-qa
 
 ### PaperQA2 Test Resources We Can Use:
 
-- `paper-qa/tests/conftest.py` - Test fixtures and utilities
-- `paper-qa/tests/stub_data/` - Test documents (PDFs, text files, etc.)
-- Test patterns for Settings, Docs, and agent_query usage
-
 ### Directory Usage:
-
-```
-academic-mcp-server/
-├── paper-qa/                    # 🚫 NEVER TOUCH - Clean dependency
-├── academic-mcp-server/         # ✅ Our MCP server code
-├── tests/                       # ✅ Our integration tests
-├── scripts/                     # ✅ Our helper scripts
-└── paperqa_bridge.py           # ✅ Python bridge to PaperQA2
-```
 
 **This rule has been violated multiple times. NEVER make this mistake again.**
 
 ## Development Environment
 
 - **Primary Language**: Python (for PDF processing, embeddings, search)
-- **Secondary Language**: TypeScript/JavaScript (for MCP protocol implementation)
 - **Framework**: MCP (Model Context Protocol) server architecture
 - **Key Libraries**:
-  - PDF processing: PyMuPDF, pdfplumber
-  - Embeddings: sentence-transformers, openai
-  - Vector search: FAISS, ChromaDB
-  - Citation handling: pybtex, citeproc-py
 - **Testing**: pytest for Python components
 - **Code Style**: Black for Python, Prettier for JS/TS
 
@@ -154,13 +136,15 @@ academic-mcp-server/
 - Validate inputs
 - Log important operations
 
-## Context Files
-
-@academic-mcp-server/prd.md - Complete technical specification and requirements
-
 ## Task Master AI Instructions
 
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
 
 - No unnecessary custom builds
+
+**For debugging:**
+lets plan this debugging carefully. looking in the commit history and how many new packages came in, this does not look reasonable. │
+please check:'/Users/benediktw/Documents/gitHub/academic-research-assistant/docs/mcp-server-debugging-report.md' what hase been tried so far.\ │
+also check the most recent logs: │
+/Users/benediktw/Library/Logs/Claude

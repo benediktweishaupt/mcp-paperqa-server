@@ -30,8 +30,8 @@ def get_paperqa_settings(base_dir: Path = None) -> Settings:
     
     # PaperQA2 Settings optimized for academic content
     settings = Settings(
-        # Voyage AI - State-of-the-art academic embedding
-        embedding="voyage/voyage-3-large",  # 9.74% better than OpenAI + 2x cheaper
+        # Use free local embedding model instead of paid Voyage AI
+        embedding="text-embedding-3-small",  # OpenAI embedding that works with existing API keys
         
         # LLM Configuration
         llm="gpt-4o-2024-11-20",
@@ -43,13 +43,15 @@ def get_paperqa_settings(base_dir: Path = None) -> Settings:
                 paper_directory=paper_directory,
                 index_directory=cache_directory / "index",
                 sync_with_paper_directory=True,  # Auto-detect file changes
-            )
+            ),
+            rebuild_index=False  # Don't auto-rebuild unless explicitly requested
         ),
         
         # Academic-optimized parsing
         parsing=ParsingSettings(
             chunk_size=4000,  # Good balance for academic papers
             overlap=200,      # Sufficient context preservation
+            use_doc_details=False,  # Skip external API calls to avoid SSL issues
         ),
         
         # Quality-focused answer generation

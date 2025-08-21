@@ -1,41 +1,45 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "env": {
-    "CLAUDE_CODE_SKIP_CONFIRMATION": "true"
-  },
   "permissions": {
     "allow": [
-      "*"
+      "Bash(*)",
+      "Edit",
+      "MultiEdit",
+      "Read",
+      "Write",
+      "WriteFile(*)",
+      "ReadFile(*)",
+      "CreateFile(*)",
+      "DeleteFile(*)",
+      "Glob",
+      "Grep",
+      "LS",
+      "View",
+      "WebFetch(*)",
+      "WebSearch",
+      "TodoRead",
+      "TodoWrite",
+      "Task",
+      "mcp__*",
+      "mcp__paperqa-academic__get_library_status",
+      "Bash(brew install:*)",
+      "Bash(python:*)",
+      "mcp__context7__get-library-docs",
+      "mcp__paperqa-academic__search_literature",
+      "Bash(git checkout:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
       "Bash(rm -rf ~)",
-      "Bash(:(){ :|:& };:)",
-      "Bash(*dd*of=/dev/*)",
-      "Bash(mkfs*)",
-      "Bash(shutdown*)",
-      "Bash(reboot*)",
-      "Bash(*> /etc/passwd)",
-      "Bash(*> /etc/shadow)",
-      "Bash(*> /etc/sudoers)"
-    ],
-    "ask": [
-      "Bash(rm -rf .git)",
-      "Bash(rm -rf src)",
-      "Bash(rm -rf app)",
-      "Bash(rm -rf *.json)",
-      "Bash(git push --force*)",
-      "Bash(git reset --hard*)",
-      "Bash(*publish*)",
-      "Bash(*deploy*)",
-      "Bash(aws*delete*)",
-      "Bash(gcloud*delete*)",
-      "Bash(*DROP DATABASE*)",
-      "Bash(*TRUNCATE*)"
-    ],
-    "additionalDirectories": [
-      "/Users/benediktw/Documents/gitHub"
+      "Bash(:(){ :|:& };:)"
     ]
   },
+  "enableAllProjectMcpServers": true,
+  "additionalDirectories": [
+    "/Users/benediktw/Documents/gitHub"
+  ],
   "defaultMode": "acceptEdits"
 }

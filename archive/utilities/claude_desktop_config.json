@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "paperqa-academic": {
+      "command": "/Users/benediktw/Documents/gitHub/academic-research-assistant/venv/bin/python",
+      "args": [
+        "/Users/benediktw/Documents/gitHub/academic-research-assistant/paperqa-mcp/server.py"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "ctx7sk-6368711e-07db-4df0-8286-7749703f0863"
+      ]
+    }
+  }
+}
