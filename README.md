@@ -16,32 +16,101 @@ This project provides a production-ready MCP server that transforms how PhD stud
 
 ## ⚡ Quick Start
 
+### Prerequisites
+- Python 3.11+
+- OpenAI API key (required)
+- Voyage AI API key (optional, but recommended for 6x cost savings)
+
+### Installation
+
 ```bash
-# 1. Install dependencies  
+# 1. Clone and setup environment
+git clone <repository-url>
+cd academic-research-assistant
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 2. Set up API keys (copy .env.example to .env)
+# 3. Configure API keys
 cp .env.example .env
-# Edit .env with your OpenAI and Voyage AI keys
+# Edit .env with your API keys:
+# OPENAI_API_KEY=your-openai-key
+# VOYAGE_API_KEY=your-voyage-key (optional but recommended)
+```
 
-# 3. Add your PDF books
-cp your-books/*.pdf paperqa-mcp/papers/
+### Document Processing Setup
 
-# 4. Start the server
-python3 paperqa-mcp/server.py
+**For text-ready PDFs** (most modern academic papers):
+```bash
+# 1. Add your PDF books
+cp your-papers/*.pdf paperqa-mcp/papers/
+
+# 2. Build search index (required, ~$3-5 cost)
+python archive/utilities/build_index.py
+
+# 3. Test the system
+python paperqa-mcp/server.py  # Keep running
+# In Claude Desktop: Try "What topics are covered in my papers?"
+```
+
+**For scanned PDFs** (older papers, books):
+```bash
+# 1. Check which PDFs need OCR
+python archive/utilities/test_pdf_text.py
+
+# 2. Install OCR tools (one-time setup)
+brew install ocrmypdf  # macOS
+# sudo apt install ocrmypdf  # Linux
+
+# 3. Convert scanned PDFs to searchable
+python archive/utilities/ocr_papers.py
+
+# 4. Build search index
+python archive/utilities/build_index.py
+
+# 5. Start using
+python paperqa-mcp/server.py
+```
+
+### Claude Desktop Integration
+
+Add to your Claude Desktop MCP config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "paperqa-academic": {
+      "command": "python",
+      "args": ["paperqa-mcp/server.py"],
+      "cwd": "/path/to/academic-research-assistant",
+      "env": {
+        "OPENAI_API_KEY": "your-key-here",
+        "VOYAGE_API_KEY": "your-key-here"
+      }
+    }
+  }
+}
 ```
 
 **Detailed setup**: See `TODO_SETUP.md` for step-by-step instructions.
 
 ### First Research Session
 
-1. **Add your PDFs:**
-   - "Add the PDF `/path/to/important_paper.pdf` to my research library"
+**Important**: PDFs must be processed offline first (see Document Processing Setup above). The MCP server loads pre-built indices for instant search.
+
+1. **Check your library status:**
+   - "What's the current status of my research library?"
 
 2. **Start researching:**
    - "What does Luhmann say about autopoiesis in social systems?"
    - "Show me contradictions between different authors on this topic"
    - "What research gaps exist in social media and systems theory?"
+
+3. **Advanced queries:**
+   - "Find papers that mention both 'neural networks' and 'interpretability'"
+   - "What methodological approaches are used in recent ML papers?"
 
 ## 🛠 Core Features
 
@@ -69,12 +138,15 @@ Research Summary: 8 evidence sources analyzed | Query Cost: $0.1270
 Library Status: 12 documents indexed | Embedding Model: voyage-ai/voyage-3-lite
 ```
 
-### 📄 Document Management (`add_document`)
-Adds PDF papers to your research library:
-- **Academic PDF processing** optimized for major publishers
-- **Automatic text extraction** and chunking
-- **Embedding generation** for semantic search
-- **Metadata extraction** and persistence
+### 📄 Document Processing (Offline Scripts)
+**Note**: Document indexing is handled offline to avoid MCP timeouts. Use these archived scripts:
+
+- **OCR Detection** (`archive/utilities/test_pdf_text.py`): Check if PDFs need OCR
+- **OCR Processing** (`archive/utilities/ocr_papers.py`): Convert scanned PDFs to searchable
+- **Index Building** (`archive/utilities/build_index.py`): Generate embeddings and search index
+- **Index Rebuilding** (`archive/utilities/rebuild_index.py`): Force rebuild if needed
+
+**Workflow**: OCR → Index Building → MCP Server loads pre-built indices instantly
 
 ### 📊 Library Status (`get_library_status`)
 Comprehensive library and system information:
@@ -124,21 +196,28 @@ Based on our testing with academic content:
 
 ## 🧪 Testing
 
-### Run Integration Tests
+### OCR and Indexing Tests
 ```bash
-# Simple integration test (recommended)
-python3 tests/simple_integration_test.py
+# Test PDF text extraction (check OCR needs)
+python archive/utilities/test_pdf_text.py
 
-# Full test suite (requires pytest-asyncio)
-python3 tests/run_all_tests.py
+# Test MCP server functionality
+python tests/run_all_tests.py
+```
+
+### Integration Tests
+```bash
+# Test full workflow with sample documents
+python tests/test_mcp_server.py
+python tests/test_paperqa_mcp_integration.py
 ```
 
 ### Test Coverage
-- ✅ **Tool registration** and MCP protocol compliance
-- ✅ **API integration** with mocked responses  
+- ✅ **OCR detection** and text extraction validation
+- ✅ **Index building** and embedding generation
+- ✅ **MCP protocol** compliance and tool registration
+- ✅ **API integration** with real and mocked responses  
 - ✅ **Error handling** and recovery scenarios
-- ✅ **Performance** and concurrent operations
-- ✅ **Configuration** management and validation
 
 ## 🚦 Production Deployment
 
@@ -161,6 +240,53 @@ The server provides detailed logging for:
 - **Input validation** for all file operations
 - **Error sanitization** prevents information leakage
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**"No papers found" or empty search results:**
+```bash
+# Check if PDFs are in the right location
+ls paperqa-mcp/papers/
+
+# Verify index was built
+ls paperqa-mcp/cache/index/
+
+# Rebuild index if needed
+python archive/utilities/rebuild_index.py
+```
+
+**"OCR failed" or scanned PDF issues:**
+```bash
+# Install OCR dependencies
+brew install tesseract ocrmypdf  # macOS
+sudo apt install tesseract-ocr ocrmypdf  # Linux
+
+# Test individual PDF
+python archive/utilities/test_pdf_text.py
+```
+
+**MCP server not connecting:**
+```bash
+# Check Claude Desktop config path
+# macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+# Verify Python path is correct in config
+# Check API keys are set in environment
+```
+
+**High embedding costs:**
+```bash
+# Switch to cheaper Voyage AI model
+# Set VOYAGE_API_KEY in .env
+# Update config to use voyage-ai/voyage-3-lite
+```
+
+### Debug Information
+For detailed debugging, check:
+- `docs/indexing-and-ocr-analysis.md` - Complete workflow analysis
+- `docs/mcp-server-debugging-report.md` - MCP troubleshooting guide
+- MCP server logs when running `python paperqa-mcp/server.py`
+
 ## 🔄 Development Workflow
 
 ### Built with Task Master AI
@@ -179,10 +305,28 @@ Each major milestone has been committed with detailed messages for full traceabi
 
 ### PhD Literature Review Workflow
 
-```
+```bash
+# SETUP PHASE (offline processing)
 # 1. Add your core papers
-"Add `/Users/student/papers/luhmann_social_systems.pdf` to my library"
-"Add `/Users/student/papers/parsons_action_theory.pdf` to my library"
+cp /Users/student/papers/*.pdf paperqa-mcp/papers/
+
+# 2. Check if scanned PDFs need OCR
+python archive/utilities/test_pdf_text.py
+
+# 3. Process any scanned PDFs (if needed)
+python archive/utilities/ocr_papers.py
+
+# 4. Build searchable index (~$3-5 cost)
+python archive/utilities/build_index.py
+
+# 5. Start MCP server
+python paperqa-mcp/server.py
+```
+
+```
+# RESEARCH PHASE (in Claude Desktop)
+# 1. Check your library
+"What's the current status of my research library?"
 
 # 2. Explore theoretical development
 "Show me how the concept of social systems evolved from Parsons to Luhmann"
@@ -191,21 +335,28 @@ Each major milestone has been committed with detailed messages for full traceabi
 "What contradictions exist between these authors on systemic boundaries?"
 "What aspects of digital communication in social systems remain unexplored?"
 
-# 4. Check your library status
-"What's the current status of my research library?"
+# 4. Advanced analysis
+"Compare methodological approaches across my social theory papers"
 ```
 
 ### Conference Paper Research
 
+```bash
+# SETUP: Add conference papers to your library
+cp downloaded-papers/*.pdf paperqa-mcp/papers/
+python archive/utilities/build_index.py  # Rebuild index with new papers
 ```
-# Quick literature search across your library
+
+```
+# RESEARCH: Direct queries in Claude Desktop
 "What do recent papers say about transformer architecture improvements?"
 
-# Focus on specific aspects
 "Find evidence for computational efficiency gains in attention mechanisms"
 
-# Export findings (copy from Claude's response)
+"What methodological gaps exist in current transformer evaluation?"
+
 # Results include proper citations ready for reference managers
+# Example: "Based on Smith2023 pages 45-47 and Johnson2024 pages 12-15..."
 ```
 
 ## 🤝 Contributing
