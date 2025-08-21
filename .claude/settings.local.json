@@ -5,7 +5,8 @@
   },
   "permissions": {
     "allow": [
-      "*"
+      "*",
+      "Bash(git add:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -37,5 +38,9 @@
       "/Users/benediktw/Documents/gitHub"
     ]
   },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7"
+  ],
   "defaultMode": "acceptEdits"
 }
