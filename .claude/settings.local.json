@@ -23,7 +23,10 @@
       "mcp__*",
       "mcp__paperqa-academic__get_library_status",
       "Bash(brew install:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "mcp__context7__get-library-docs",
+      "mcp__paperqa-academic__search_literature",
+      "Bash(git checkout:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

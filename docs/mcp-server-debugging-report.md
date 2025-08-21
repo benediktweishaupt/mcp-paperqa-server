@@ -2,7 +2,7 @@
 
 **Date**: August 21, 2025  
 **Issue**: PaperQA MCP Server not working with Claude Desktop  
-**Status**: Fixed - Requires Claude Desktop restart to test
+**Status**: ✅ FULLY RESOLVED - Critical index loading fix implemented
 
 ## Problem Identification
 
@@ -99,6 +99,36 @@ From FastMCP documentation research:
 - PaperQA uses rich console output with formatting codes
 - Multiple logger instances across paperqa.agents modules
 - Default logging configuration sends to stdout
+
+## 🎯 CRITICAL FIX: Index Loading Issue
+
+### Root Cause Discovery (August 21, 2025)
+**Issue**: `agent_query()` returning 0 contexts despite having indexed documents
+
+**Analysis**: From Context7 PaperQA documentation research, discovered that `agent_query()` requires explicit index loading:
+
+```python
+# ❌ BROKEN - Direct agent_query without index loading
+result = await agent_query(query=query, settings=settings)  # Returns 0 contexts
+
+# ✅ FIXED - Must load index first using get_directory_index
+built_index = await get_directory_index(settings=settings)  # Load existing index
+result = await agent_query(query=query, settings=settings)  # Now works correctly
+```
+
+**Implementation**: Added `get_directory_index()` call in `server.py:114`:
+
+```python
+from paperqa.agents.search import get_directory_index  # Import added
+
+async def search_literature(...):
+    # Build/load the index first - this is required for agent_query to work
+    built_index = await get_directory_index(settings=current_settings)
+    
+    result = await agent_query(query=query, settings=current_settings)
+```
+
+**Reference**: PaperQA Context7 Documentation snippet #35 "Build and Reuse PaperQA Index"
 
 ## Verification Steps
 
