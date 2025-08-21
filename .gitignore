@@ -31,3 +31,4 @@ paperqa-mcp/papers/
 # Task files
 # tasks.json
 # tasks/ 
+.mcp.json
