@@ -4,7 +4,7 @@ _A technical journey from custom RAG attempt to production MCP server_
 
 ## 📚 Series Overview
 
-This four-part series documents the complete development journey of an AI-powered academic research assistant, from initial concept to production deployment. Each article combines technical implementation details with hard-won lessons learned and actionable advice for similar projects.
+This five-part series documents the complete development journey of an AI-powered academic research assistant, from initial concept to production deployment and cost optimization. Each article combines technical implementation details with hard-won lessons learned and actionable advice for similar projects.
 
 **Target Audience**: PhD students, researchers, and developers building academic tools  
 **Technical Focus**: PaperQA2 integration, MCP protocol, OCR processing, production deployment  
@@ -78,6 +78,22 @@ This four-part series documents the complete development journey of an AI-powere
 
 ---
 
+### [Part 5: Double-Calling Dilemma - The Cost of Academic Quote Extraction](article-5-cost-optimization.md)
+
+**Core Lesson**: User-centered cost optimization requires understanding real usage patterns, not just technical elegance
+
+**Key Commits**: `f491cad` → `e1f88c8` (dual-mode architecture)  
+**Topics Covered**:
+
+- Cost analysis of double-paraphrasing (GPT + Claude synthesis)
+- Dual-mode architecture: synthesis vs raw extraction
+- 100x cost reduction for quote extraction use cases
+- Production usage pattern analysis (60% extraction, 40% synthesis)
+
+**Takeaway**: Sometimes the best optimization is not processing at all - direct extraction vs expensive synthesis
+
+---
+
 ## 🎯 Cross-Series Insights
 
 ### Recurring Technical Patterns
@@ -86,6 +102,7 @@ This four-part series documents the complete development journey of an AI-powere
 2. **Offline processing** essential for heavy operations in MCP architecture
 3. **Protocol compliance** more critical than application features
 4. **Cost optimization** required for academic user adoption
+5. **Dual-mode architecture** enables both power and efficiency
 
 ### Development Methodology Lessons
 
@@ -93,6 +110,7 @@ This four-part series documents the complete development journey of an AI-powere
 2. **User workflow design before technical architecture** - UX drives technical decisions
 3. **Cleanup as core practice** - Archive experimental work immediately
 4. **Fresh environment testing** - Stale connections hide real issues
+5. **Usage pattern analysis** - Real user behavior drives optimization decisions
 
 ### Academic Domain Specifics
 
@@ -109,6 +127,7 @@ This four-part series documents the complete development journey of an AI-powere
 - **Setup time**: 15 minutes (including index building)
 - **Query response**: <3 seconds for comprehensive literature searches
 - **Cost efficiency**: $10 total for 50-paper research library
+- **Query cost optimization**: 100x reduction for quote extraction ($0.001 vs $0.10)
 
 ### Academic Impact Metrics
 
