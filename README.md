@@ -1,66 +1,41 @@
-# 🎓 Academic Research Assistant
+# Academic Research Assistant
 
-**AI-powered research through your academic library using Claude Desktop**
+MCP server that connects Claude Desktop to your personal academic library. Ask questions in natural language, get answers with citations from your own books and papers.
 
-Transform your PhD research workflow: Natural conversations with Claude to find relevant passages, track arguments across authors, and generate properly formatted citations from your personal academic library.
+## What it does
 
-## ⚡ Quick Setup
+You drop PDFs into a folder, build a search index, and then ask Claude things like "What does Hito Steyerl write about truth and representation?" — and it finds the relevant passages across your entire library, with proper citations and page numbers.
 
-### Prerequisites
-- Python 3.11+
-- OpenAI API key (required)
-- Voyage AI API key (recommended for 6x cost savings)
+## Why it works well
 
-### Installation
+The retrieval is surprisingly good. It uses Voyage AI embeddings (voyage-3-lite) for semantic search via PaperQA2, which means it understands what you're asking for, not just keyword matching. A query costs about $0.02–0.05. Setting up a 50-paper library costs around $10 total.
+
+The architecture is simple on purpose: heavy operations (OCR, indexing) happen offline. The MCP server loads pre-built indices and starts in under a second. Production code is 256 lines.
+
+## What I learned building it
+
+The interesting part was the pivot. I started with a custom RAG solution that was expensive and fragile. Integrating PaperQA2 cut the codebase by 80% and made everything more reliable. The other discovery: switching from OpenAI's text-embedding-3-small to Voyage AI's voyage-3-lite reduced embedding costs by 6x with equal or better retrieval quality for academic texts. Adding a dual-mode architecture (raw extraction vs. LLM synthesis) brought another 100x cost reduction for simple lookups.
+
+## Stack
+
+Python, FastMCP, PaperQA2, Voyage AI, OpenAI, Tesseract OCR.
+
+## Setup
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/benediktweishaupt/academic-research-assistant.git
 cd academic-research-assistant
-python -m venv venv
-source venv/bin/activate
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env  # add your API keys
 ```
 
-### Configure API Keys
-```bash
-cp .env.example .env
-# Edit .env with your keys:
-# OPENAI_API_KEY=your-key-here
-# VOYAGE_API_KEY=your-key-here
-```
+Add PDFs, build the index, configure Claude Desktop:
 
-## 📄 Document Processing
-
-### Modern PDFs (Text-Ready)
 ```bash
-# 1. Add PDFs to library
 cp your-papers/*.pdf paperqa-mcp/papers/
-
-# 2. Build search index (~$3-5 cost)
 python archive/utilities/build_index.py
-
-# 3. Start MCP server
-python paperqa-mcp/server.py
 ```
-
-### Scanned PDFs (Need OCR)
-```bash
-# 1. Check which PDFs need OCR
-python archive/utilities/test_pdf_text.py
-
-# 2. Install OCR tools (one-time)
-brew install tesseract ocrmypdf  # macOS
-
-# 3. Convert scanned PDFs
-python archive/utilities/ocr_papers.py
-
-# 4. Build index and start server
-python archive/utilities/build_index.py
-python paperqa-mcp/server.py
-```
-
-## 🔌 Claude Desktop Setup
-
-Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -68,124 +43,10 @@ Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_deskt
     "paperqa-academic": {
       "command": "python",
       "args": ["paperqa-mcp/server.py"],
-      "cwd": "/path/to/academic-research-assistant",
-      "env": {
-        "OPENAI_API_KEY": "your-key",
-        "VOYAGE_API_KEY": "your-key"
-      }
+      "cwd": "/path/to/academic-research-assistant"
     }
   }
 }
 ```
 
-## 🎯 Usage
-
-### Research Queries
-```
-"What's the current status of my research library?"
-"What does Hito Steyerl write about truth and representation?"
-"Find papers that mention both neural networks and interpretability"
-"Compare methodological approaches across my papers"
-```
-
-### Example Output
-```
-# Literature Search Results
-
-Hito Steyerl examines truth and representation in documentary practices...
-[Detailed analysis with proper academic citations]
-
----
-Research Summary: 5 evidence sources analyzed | Query Cost: $0.0373
-Library Status: Using pre-built index | Embedding Model: text-embedding-3-small
-```
-
-## 🛠 Core Features
-
-- **Literature Search**: Multi-source analysis with citations
-- **Library Status**: Document count, storage, configuration
-- **Embedding Config**: Switch between cost/performance models
-
-## 🏗 Architecture
-
-**Current Structure:**
-```
-paperqa-mcp/
-├── server.py                # Main MCP server (FastMCP + PaperQA2)
-├── config.py               # Settings and model configuration
-├── papers/                 # Your PDF library
-└── cache/index/           # Pre-built search indices
-
-archive/utilities/          # Document processing scripts
-├── test_pdf_text.py       # OCR readiness detection
-├── ocr_papers.py          # Multi-language OCR processing
-├── build_index.py         # Index building with cost tracking
-└── rebuild_index.py       # Index rebuilding utility
-```
-
-**Design Philosophy:**
-- **Offline processing**: Heavy lifting (OCR, indexing) done separately
-- **Instant MCP**: Server loads pre-built indices in <1 second
-- **Cost transparent**: Know embedding costs upfront
-- **Production ready**: 256 lines, minimal dependencies
-
-## 🧪 Testing
-
-```bash
-# Check OCR needs
-python archive/utilities/test_pdf_text.py
-
-# Test MCP functionality
-python tests/run_all_tests.py
-
-# Full integration test
-python tests/test_paperqa_mcp_integration.py
-```
-
-## 🔧 Troubleshooting
-
-**Empty search results:**
-```bash
-ls paperqa-mcp/papers/                    # Check PDFs exist
-ls paperqa-mcp/cache/index/              # Check index built
-python archive/utilities/rebuild_index.py # Rebuild if needed
-```
-
-**OCR issues:**
-```bash
-brew install tesseract ocrmypdf           # Install OCR tools
-python archive/utilities/test_pdf_text.py # Test extraction
-```
-
-**MCP connection:**
-- Verify Claude Desktop config path and Python paths
-- Check API keys in environment
-- Restart Claude Desktop after config changes
-
-## 💰 Cost Management
-
-**Embedding Models (Academic Performance):**
-- **voyage-ai/voyage-3-lite**: $0.08/1M tokens (recommended)
-- **text-embedding-3-small**: $0.52/1M tokens (baseline)
-
-**Typical Costs:**
-- **Index building**: $3-5 per 50 academic papers (one-time)
-- **Research queries**: $0.02-0.05 per question
-- **50-paper library**: ~$10 total setup cost
-
-## 📚 Key Documents
-
-- `docs/indexing-and-ocr-analysis.md` - Complete workflow analysis
-- `docs/mcp-server-debugging-report.md` - Troubleshooting guide
-- `TODO_SETUP.md` - Detailed setup instructions
-
-## 🤝 Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Test changes: `python tests/run_all_tests.py`
-4. Submit pull request
-
----
-
-**Ready to revolutionize your PhD research? Start with the Quick Setup above!**
+Scanned PDFs work too — there's an OCR pipeline built in (`python archive/utilities/ocr_papers.py`).
