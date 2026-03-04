@@ -1,6 +1,8 @@
 # mcp-paperqa-server
 
-MCP server that makes your research library searchable from Claude. You put PDFs in a folder, build an index, and then ask questions against your books. It uses PaperQA2 for retrieval and returns passages with page numbers.
+MCP server that makes your research library searchable from Claude. A simple MCP wrapper of PaperQA2.
+
+You put PDFs in a folder, build an index, and then ask questions against your books. It returns passages with page numbers.
 
 ## How it works
 
