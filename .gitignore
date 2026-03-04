@@ -12,6 +12,9 @@ node_modules/
 # Do not share the papers if not clear that all are allowing this
 paperqa-mcp/papers/
 
+# Cache/index files (contain extracted paper text, vector indexes)
+paperqa-mcp/cache/
+
 # Environment variables
 .env
 
