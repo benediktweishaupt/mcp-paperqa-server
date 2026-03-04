@@ -1,0 +1,388 @@
+# PaperQA2 Full Leverage — PRD for Academic Research Assistant v2
+
+## Overview
+
+The Academic Research Assistant MCP server currently uses approximately 28% of PaperQA2's available functionality. This PRD defines improvements to fully leverage PaperQA2 for our specific use case: PhD students in humanities and cultural studies working with scanned books and cultural theory texts (e.g. Hito Steyerl, Luhmann, critical theory).
+
+This is NOT a science-journal workflow. We work with scanned books, complex layouts, footnote-heavy texts, and specialized cultural/theoretical vocabulary. Features are evaluated under this premise.
+
+## Context: Current State
+
+### What We Use Today
+- `agent_query()` for agentic search + synthesis
+- `get_directory_index()` for loading pre-built indices
+- `Settings`, `AgentSettings`, `IndexSettings`, `ParsingSettings`, `AnswerSettings`
+- Basic config: `text-embedding-3-small`, `gpt-4o`, chunk_size=4000, overlap=200
+- `evidence_skip_summary=True` (direct quotes, no paraphrasing)
+- `use_doc_details=False` (no external metadata lookups)
+- 4 MCP tools: `search_literature`, `get_contexts`, `get_library_status`, `configure_embedding`
+
+### What We Don't Use (But Should)
+- Block-based PDF parsing for complex book layouts
+- Multimodal parsing (tables, figures, images)
+- Hybrid search (dense + sparse embeddings)
+- MMR (Maximum Marginal Relevance) for result diversity
+- Better embedding models (Voyage: better quality, cheaper, 32K context)
+- Document management through MCP (add/remove books)
+- Query mode flexibility (fast vs thorough)
+- Session transparency (tool history, token usage, cost breakdown)
+- Non-PDF format support
+
+### What We Correctly Skip
+- Semantic Scholar, CrossRef, OpenAlex, Unpaywall (journal-paper metadata services — irrelevant for scanned books)
+- Journal quality scoring (no journals)
+- Retraction checking (books don't get retracted)
+- Clinical trials search (not our domain)
+- `use_doc_details=True` (triggers external API calls for metadata we don't need)
+- External paper discovery (our library is curated, not discovered)
+
+## Version Update Requirement
+
+**BLOCKER**: PaperQA2 has moved to calendar versioning. Latest release is 2026.3.3. Our `requirements.txt` specifies `paper-qa>=5.0.0` (old scheme). The project venv has a broken Python 3.13 symlink. Before any feature work:
+
+1. Recreate the virtual environment
+2. Install latest paper-qa
+3. Verify existing index compatibility (may need rebuild)
+4. Adapt any changed imports/APIs
+5. Run existing functionality tests
+
+This must happen first. All subsequent work depends on a working, up-to-date PaperQA2 installation.
+
+---
+
+## Feature 1: Scanned Book Parsing Quality
+
+### Problem
+Scanned books from the cultural field have complex layouts: multi-column pages, extensive footnotes, image captions, block quotes, chapter headers, marginalia. Default text-mode PDF parsing mangles these structures, producing garbled chunks that break argument flow.
+
+### Solution
+Leverage PaperQA2's advanced parsing capabilities:
+
+1. **Enable block-based PDF parsing** (`pdfs_use_block_parsing=True`) — handles columns, headers, footnotes as distinct blocks rather than one text stream
+2. **Enable multimodal parsing** — art/culture books contain images that ARE the content (Steyerl's visual arguments, reproduction plates). PaperQA2 can use an LLM to generate descriptions for images/tables embedded in PDFs
+3. **Tune chunk sizes for books** — academic papers are 10-20 pages; books are 300+. Arguments span multiple pages. Test chunk_size range 5000-7000 with overlap 300-500 to preserve complete argumentative units
+4. **Configure `page_size_limit`** — scanned books can have large pages. Ensure we don't truncate content
+
+### Settings Changes
+```python
+parsing=ParsingSettings(
+    chunk_size=6000,          # Up from 4000 — books have longer arguments
+    overlap=400,              # Up from 200 — more context preservation
+    use_doc_details=False,    # Keep off — no journal metadata needed
+    pdfs_use_block_parsing=True,  # NEW — handle complex layouts
+)
+```
+
+### Validation
+- Test with 3-4 actual scanned books from the library
+- Compare chunk quality: default parsing vs block parsing
+- Check footnote handling: are footnotes correctly associated or garbled?
+- Verify image/figure descriptions are generated (multimodal)
+- Measure any performance impact on indexing time
+
+### Risk
+- Block parsing may be slower for initial indexing
+- Multimodal parsing adds LLM cost per image — need to measure
+- Existing indices will need rebuilding with new parsing settings
+
+---
+
+## Feature 2: Embedding Model Upgrade
+
+### Problem
+We use `text-embedding-3-small` (OpenAI, 8K context). Our own config comments document that Voyage models are 7-10% better at retrieval AND cheaper. For book-length content with specialized cultural vocabulary, the 32K context window of Voyage is significant — it can embed much larger passages without truncation.
+
+### Solution
+Switch default embedding to Voyage and fix the `configure_embedding` tool (currently broken — mutates global settings object but doesn't persist or rebuild index).
+
+1. **Change default to `voyage/voyage-3`** — balanced quality/cost (+7.55% vs OpenAI, 2x cheaper, 32K context)
+2. **Fix `configure_embedding` tool** — currently mutates `settings.embedding` on the global object but this doesn't rebuild the index or persist. Either:
+   - Make it rebuild the index with the new model (expensive, warn user)
+   - Or remove the tool and make embedding a config-time decision (simpler, honest)
+3. **Document the Voyage API key requirement** — needs `VOYAGE_API_KEY` in environment
+
+### Settings Changes
+```python
+embedding="voyage/voyage-3",  # Was: text-embedding-3-small
+```
+
+### Validation
+- Run same queries on same library with both models, compare relevance
+- Verify cost reduction
+- Test with cultural-theory specific terminology (e.g. "Verfremdungseffekt", "proxy politics", "operational closure")
+
+### Risk
+- Requires VOYAGE_API_KEY — adds a dependency
+- All existing indices must be rebuilt (one-time cost)
+- Voyage may handle non-English text differently (many cultural texts are translated or multilingual)
+
+---
+
+## Feature 3: Hybrid Search (Dense + Sparse)
+
+### Problem
+Cultural/theoretical texts use highly specialized vocabulary. Pure dense (embedding) search can miss exact term matches. When a user searches for "Steyerl proxy politics", dense search finds semantically similar content but may miss the exact passage where she coins the term. Sparse (BM25-style) search catches exact keywords that embeddings miss.
+
+### Solution
+PaperQA2 supports hybrid embeddings that combine dense vectors with sparse (keyword) signals. Enable this for better recall on specialized terminology.
+
+1. **Use `HybridEmbeddingModel`** or configure hybrid embedding mode
+2. **Combine with MMR** to ensure diverse results (see Feature 4)
+
+### Settings Changes
+Investigate PaperQA2's hybrid embedding configuration. This may involve:
+```python
+from paperqa import HybridEmbeddingModel
+# Configure hybrid mode that combines dense + sparse
+```
+
+### Validation
+- Test queries with exact terminology vs paraphrased concepts
+- Compare hit rates: dense-only vs hybrid
+- Measure latency impact
+
+### Risk
+- May increase index size
+- Need to verify PaperQA2's current hybrid implementation stability
+- Index rebuild required
+
+---
+
+## Feature 4: MMR Search for Result Diversity
+
+### Problem
+When searching books, multiple highly-scored chunks often come from the same page or section — you get 5 variations of the same passage instead of evidence from across the book. This is worse for books than papers because books repeat and develop ideas across chapters.
+
+### Solution
+PaperQA2's `retrieve_texts()` supports Maximum Marginal Relevance (MMR) search with a tunable `mmr_lambda` parameter. MMR balances relevance against diversity, ensuring results span different parts of the library.
+
+### Implementation
+- Configure `mmr_lambda` on the vector store (0.5 = balanced, higher = more diverse)
+- This works with existing `agent_query()` if configured at the settings level
+- Alternatively, expose a direct semantic search tool using `Docs.retrieve_texts()` for when users want raw search without the agent
+
+### Validation
+- Compare result diversity with and without MMR
+- Test on queries where the answer spans multiple chapters/books
+- Find optimal `mmr_lambda` for cultural texts
+
+### Risk
+- Low risk — MMR is a well-understood technique
+- May slightly reduce top-1 relevance in favor of diversity (acceptable tradeoff)
+
+---
+
+## Feature 5: Document Management via MCP
+
+### Problem
+Adding and removing books requires manual file operations + running `build_index.py` + restarting Claude Desktop. This breaks the conversational flow. PaperQA2 has `aadd()`, `aadd_file()`, `delete()` methods we don't use.
+
+### Solution
+Expose document management through MCP tools, with the timeout problem solved:
+
+1. **`add_document` tool** — add a book by file path using `Docs.aadd()` or `Docs.aadd_file()`
+   - Run indexing as a background task
+   - Return immediately with "indexing in progress" status
+   - Notify when complete
+2. **`remove_document` tool** — remove a book using `Docs.delete()`
+3. **`list_documents` tool** — show all indexed documents with metadata
+4. **Support non-PDF formats** — PaperQA2 handles `.txt`, `.html`, `.docx` natively. Cultural researchers often work with plain text transcriptions, web essays, exhibition catalogs in HTML
+
+### Background Indexing Strategy
+The original `add_document` was disabled due to MCP timeouts (>60 seconds for large PDFs). Solutions:
+- Use `asyncio.create_task()` for background indexing
+- Return immediately with a job ID
+- Add a `check_indexing_status` tool to poll progress
+- Or: use PaperQA2's `sync_with_paper_directory=True` more aggressively — just copy the file and let the next query trigger incremental indexing
+
+### Validation
+- Add a book via MCP, verify it appears in search results
+- Remove a book, verify it's gone from results
+- Test with .txt and .html files
+- Measure indexing time for a typical 300-page scanned book
+- Verify no MCP timeout occurs
+
+### Risk
+- Background task management adds complexity
+- Large scanned books may take minutes to index
+- Need to handle partial/failed indexing gracefully
+
+---
+
+## Feature 6: Query Modes (Fast vs Thorough)
+
+### Problem
+Every query currently runs the full agent workflow: paper search → evidence gathering (15 sources) → LLM synthesis. This costs ~$0.06 and takes 30-60 seconds. Sometimes you just want a quick lookup ("What page does Steyerl mention proxy?"), other times you want deep synthesis ("How does Steyerl's concept of proxy relate to Baudrillard's simulacra across all my books?").
+
+### Solution
+PaperQA2 ships preset configurations (`fast.json`, `high_quality.json`). Expose query modes:
+
+1. **Fast mode** — minimal LLM calls, fewer evidence sources, direct retrieval
+   - `evidence_k=3`, reduced agent steps
+   - Or use `Docs.retrieve_texts()` directly (skip agent entirely)
+   - Target: <5 seconds, <$0.005 per query
+2. **Thorough mode** — full agent workflow, maximum evidence
+   - `evidence_k=15`, full synthesis
+   - Current behavior, but explicitly named
+3. **Expose as parameter** on `search_literature` and `get_contexts` tools
+
+### Implementation
+```python
+@server.tool()
+async def search_literature(
+    query: str,
+    mode: str = "thorough",  # "fast" | "thorough"
+    ...
+) -> str:
+```
+
+### Validation
+- Compare speed and cost between modes
+- Verify fast mode still returns useful results
+- Test that thorough mode matches current quality
+
+### Risk
+- Minimal — this is configuration, not new functionality
+- Users need to understand the tradeoff
+
+---
+
+## Feature 7: Session Transparency & Cost Reporting
+
+### Problem
+Users have no visibility into what the agent did during a query. The response shows the answer and total cost, but not: which tools the agent used, how many papers it searched, how many evidence chunks it evaluated, token breakdown, or decision rationale.
+
+### Solution
+Extract and expose PaperQA2's session data:
+
+1. **Extract from `result.session`**:
+   - `tool_history` — what the agent did step by step
+   - `tokens_used` — input/output/reasoning token counts
+   - `cost` breakdown by operation (search vs evidence vs synthesis)
+2. **Add to response footer** (optional, controlled by verbosity parameter)
+3. **Cumulative session tracking** — track total cost across queries in a session
+
+### Implementation
+Enhance response formatting:
+```python
+# After agent_query
+session = result.session
+# Extract: session.tool_history, token counts, per-step costs
+```
+
+### Validation
+- Verify all session fields are accessible in current PaperQA2 version
+- Check that tool_history provides meaningful information
+- Ensure cost tracking is accurate
+
+### Risk
+- Low risk — read-only extraction from existing data
+- PaperQA2 API for session data may have changed in recent versions — verify after update
+
+---
+
+## Feature 8: Direct Semantic Search Tool
+
+### Problem
+`get_contexts` currently runs the full `agent_query()` pipeline to extract contexts — meaning it does LLM-based evidence gathering even though the tool's purpose is raw text retrieval. This is wasteful. PaperQA2's `Docs.retrieve_texts()` does pure vector search without any LLM calls.
+
+### Solution
+Replace `get_contexts`'s implementation with `Docs.retrieve_texts()` for true zero-LLM-cost retrieval:
+
+1. Use `Docs.retrieve_texts()` — MMR-based vector search, no LLM calls
+2. Cost drops from ~$0.06 to ~$0.001 (embedding lookup only)
+3. Speed drops from 30-60 seconds to <3 seconds
+4. Keep current `get_contexts` response format
+
+### Implementation
+```python
+@server.tool()
+async def get_contexts(query: str, max_sources: int = 10) -> str:
+    # Instead of agent_query(), use:
+    texts = await docs.retrieve_texts(query=query, k=max_sources)
+    # Format and return
+```
+
+### Validation
+- Compare retrieval quality: agent-based vs direct vector search
+- Verify cost is near-zero
+- Measure latency improvement
+- Ensure page references still work
+
+### Risk
+- Quality may be lower without LLM re-ranking (tradeoff: speed/cost vs relevance)
+- May need to load docs object differently than current index approach
+- Could offer both: `get_contexts` (fast, vector-only) and `search_literature` (thorough, agent-based)
+
+---
+
+## Development Phases
+
+### Phase 0: Foundation (BLOCKER)
+- Recreate venv with working Python
+- Update paper-qa to 2026.x
+- Verify existing functionality still works
+- Test index compatibility
+- Update requirements.txt
+
+### Phase 1: Parsing & Search Quality
+- Feature 1: Block-based parsing + multimodal + chunk tuning
+- Feature 2: Voyage embedding upgrade
+- Rebuild indices with new settings
+- Validate with actual scanned books
+
+### Phase 2: Search Intelligence
+- Feature 3: Hybrid search
+- Feature 4: MMR diversity
+- Feature 8: Direct semantic search (fix get_contexts)
+
+### Phase 3: User Experience
+- Feature 5: Document management via MCP
+- Feature 6: Query modes (fast/thorough)
+- Feature 7: Session transparency
+
+## Explicitly Out of Scope
+
+These PaperQA2 features are NOT relevant to our use case and should NOT be implemented:
+
+- **Semantic Scholar / CrossRef / OpenAlex / Unpaywall integration** — these are journal-paper metadata services. Scanned cultural books are not in these databases. A Hito Steyerl book will not appear in Semantic Scholar.
+- **`use_doc_details=True`** — triggers external API calls for DOIs, citation counts, journal quality. Scanned books have none of these.
+- **Journal quality scoring** — no journals.
+- **Retraction checking** — books don't get retracted.
+- **Clinical trials search** — not our domain.
+- **External paper discovery** — our library is curated by the researcher, not discovered via search APIs.
+- **Zotero integration** — possible future enhancement but not a PaperQA2 leverage question.
+- **Agent type changes** (LDP ReAct, MemoryAgent etc.) — default agent works fine for our use case.
+
+## Success Metrics
+
+| Metric | Current | Target |
+|---|---|---|
+| PaperQA2 feature usage | ~28% | ~60% (of features relevant to our use case) |
+| Scanned book chunk quality | Poor (garbled layouts) | Clean argumentative units |
+| Query cost (quick lookup) | ~$0.06 | <$0.005 |
+| Query cost (deep synthesis) | ~$0.06 | ~$0.06 (same, but explicitly chosen) |
+| Query latency (quick lookup) | 30-60s | <5s |
+| Embedding quality | Baseline (OpenAI small) | +7-10% (Voyage) |
+| Document management | Manual (CLI + restart) | Via MCP tools |
+| Search diversity | Low (clustered results) | High (MMR-diversified) |
+| Terminology recall | Embedding-only | Hybrid (dense + sparse) |
+| Cost visibility | Total only | Per-operation breakdown |
+
+## Risks and Mitigations
+
+### Version Update Risk
+- **Risk**: PaperQA2 API changes break existing functionality
+- **Mitigation**: Update in isolation, test existing tools before adding features. Pin exact version after successful update.
+
+### Index Rebuild Cost
+- **Risk**: Multiple features require index rebuilding (parsing changes, embedding change, hybrid search). Each rebuild costs money (embedding API calls).
+- **Mitigation**: Batch all index-affecting changes (Features 1, 2, 3) into Phase 1. Rebuild once.
+
+### Scanned Book Quality
+- **Risk**: Block parsing may not help with poorly scanned books (low OCR quality)
+- **Mitigation**: Test with actual library books. If OCR is the bottleneck, consider preprocessing with dedicated OCR tools before PaperQA2 ingestion. This is outside PaperQA2's scope.
+
+### Voyage API Dependency
+- **Risk**: Adding Voyage as default embedding requires a new API key
+- **Mitigation**: Keep OpenAI embedding as documented fallback. Make embedding model a clear config choice.

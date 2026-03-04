@@ -1,41 +1,36 @@
-# Academic Research Assistant
+# mcp-paperqa-server
 
-MCP server that connects Claude Desktop to your personal academic library. Ask questions in natural language, get answers with citations from your own books and papers.
+MCP server that makes your research library searchable from Claude. You put PDFs in a folder, build an index, and then ask questions against your books. It uses PaperQA2 for retrieval and returns passages with page numbers.
 
-## What it does
+## How it works
 
-You drop PDFs into a folder, build a search index, and then ask Claude things like "What does Hito Steyerl write about truth and representation?" — and it finds the relevant passages across your entire library, with proper citations and page numbers.
+1. You drop PDFs (or scanned books after OCR) into `paperqa-mcp/papers/`
+2. You build a search index once with `python archive/utilities/build_index.py`
+3. You point Claude Desktop at the MCP server
+4. You ask questions, it searches your library
 
-## Why it works well
-
-The retrieval is surprisingly good. It uses Voyage AI embeddings (voyage-3-lite) for semantic search via PaperQA2, which means it understands what you're asking for, not just keyword matching. A query costs about $0.02–0.05. Setting up a 50-paper library costs around $10 total.
-
-The architecture is simple on purpose: heavy operations (OCR, indexing) happen offline. The MCP server loads pre-built indices and starts in under a second. Production code is 256 lines.
-
-## What I learned building it
-
-The interesting part was the pivot. I started with a custom RAG solution that was expensive and fragile. Integrating PaperQA2 cut the codebase by 80% and made everything more reliable. The other discovery: switching from OpenAI's text-embedding-3-small to Voyage AI's voyage-3-lite reduced embedding costs by 6x with equal or better retrieval quality for academic texts. Adding a dual-mode architecture (raw extraction vs. LLM synthesis) brought another 100x cost reduction for simple lookups.
-
-## Stack
-
-Python, FastMCP, PaperQA2, Voyage AI, OpenAI, Tesseract OCR.
+Two search modes: full synthesis (agent finds evidence, writes an answer with citations, ~$0.05) or raw context extraction (returns matching passages directly, much cheaper).
 
 ## Setup
 
 ```bash
-git clone https://github.com/benediktweishaupt/academic-research-assistant.git
-cd academic-research-assistant
+git clone https://github.com/benediktweishaupt/mcp-paperqa-server.git
+cd mcp-paperqa-server
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # add your API keys
+cp .env.example .env  # add API keys (OpenAI required, Voyage optional)
 ```
 
-Add PDFs, build the index, configure Claude Desktop:
+Add your books and build the index:
 
 ```bash
-cp your-papers/*.pdf paperqa-mcp/papers/
+cp your-books/*.pdf paperqa-mcp/papers/
 python archive/utilities/build_index.py
 ```
+
+For scanned books, run OCR first: `python archive/utilities/ocr_papers.py`
+
+Add to Claude Desktop config:
 
 ```json
 {
@@ -43,10 +38,19 @@ python archive/utilities/build_index.py
     "paperqa-academic": {
       "command": "python",
       "args": ["paperqa-mcp/server.py"],
-      "cwd": "/path/to/academic-research-assistant"
+      "cwd": "/path/to/mcp-paperqa-server"
     }
   }
 }
 ```
 
-Scanned PDFs work too — there's an OCR pipeline built in (`python archive/utilities/ocr_papers.py`).
+## Tools
+
+- `search_literature` — ask a question, get a synthesized answer with citations
+- `get_contexts` — get raw text chunks matching a query (no LLM synthesis)
+- `get_library_status` — check what's indexed
+- `configure_embedding` — switch embedding model
+
+## Built with
+
+Python, FastMCP, PaperQA2, OpenAI.
