@@ -1,506 +1,351 @@
 #!/usr/bin/env python3
 """
-PaperQA2 MCP Server - Lean Implementation
-Academic research MCP server providing direct PaperQA2 integration to Claude Desktop.
-
-This is a minimal, fast implementation that directly exposes PaperQA2 functionality
-through the MCP protocol without complex bridge architectures.
+PaperQA2 MCP Server — search your research library from Claude.
 """
 
 import asyncio
 import logging
 import os
 import sys
+import uuid
+import shutil
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP, Context
 from mcp.server.session import ServerSession
-from mcp.types import Tool, TextContent
 
-# PaperQA2 imports - using async API for proper integration
 from paperqa import Settings, Docs
-from paperqa.agents.main import agent_query  # Async API for proper FastMCP integration
-from paperqa.agents.search import get_directory_index  # Required for index loading
-from paperqa.settings import AgentSettings, IndexSettings
+from paperqa.agents.main import agent_query
+from paperqa.agents.search import get_directory_index
 import paperqa
 
-# Setup logging - Configure to prevent stdout pollution for MCP
-# Redirect all logging to stderr to avoid breaking JSON-RPC protocol
+# Logging → stderr to avoid breaking JSON-RPC
 logging.basicConfig(
-    level=logging.WARNING,  # Reduce noise 
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr  # Redirect to stderr instead of stdout
+    level=logging.WARNING,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
-
-# Silence noisy PaperQA loggers that might pollute stdout
 logging.getLogger("paperqa").setLevel(logging.WARNING)
-logging.getLogger("paperqa.agents").setLevel(logging.WARNING)
-logging.getLogger("paperqa.agents.main").setLevel(logging.WARNING)
-logging.getLogger("paperqa.agents.main.agent_callers").setLevel(logging.ERROR)
 
-# Load environment variables from .env file
+# Load .env
 try:
     from dotenv import load_dotenv
     load_dotenv()
-    logger.info("✅ Loaded environment variables from .env file")
 except ImportError:
-    logger.info("⚠️ python-dotenv not installed, using system environment variables only")
+    pass
 
-# Import configuration
-import sys
-import os
+# Import config
 sys.path.insert(0, os.path.dirname(__file__))
-from config import get_paperqa_settings, get_supported_embedding_models, get_model_info
+from config import get_paperqa_settings
 
-# Get optimized settings for academic research
 settings = get_paperqa_settings()
-
-# Directory references for logging
 paper_directory = Path(__file__).parent / "papers"
 cache_directory = Path(__file__).parent / "cache"
 
-# Global state - simple and effective for MCP server
+# MCP server
 server = FastMCP("paperqa-academic")
-docs = Docs()
 
-logger.info(f"PaperQA2 MCP Server starting with Voyage AI embedding: {settings.embedding}")
-logger.info("💡 Using voyage-3-large: 9.74% better than OpenAI + 2x cheaper + 32K context")
-logger.info(f"Cache directory: {cache_directory}")
+# Session tracking
+_session_total_cost: float = 0.0
+_session_query_count: int = 0
+
+# Background indexing jobs
+_indexing_jobs: dict[str, dict] = {}
 
 
 @server.tool()
 async def search_literature(
     query: str,
     ctx: Context[ServerSession, None],
-    max_sources: Optional[int] = 5,
-    min_year: Optional[int] = None,
-    max_year: Optional[int] = None
+    mode: str = "thorough",
+    max_sources: Optional[int] = None,
 ) -> str:
     """
-    Search academic literature using PaperQA2's agent workflow.
-    
-    Performs comprehensive academic research including paper search, evidence gathering,
-    and synthesis with proper citations.
-    
+    Search your research library with synthesis.
+
     Args:
-        query: Research question or topic to investigate
-        max_sources: Maximum number of evidence sources to use (1-15)
-        min_year: Earliest publication year to include
-        max_year: Latest publication year to include
-        
-    Returns:
-        Comprehensive answer with citations and source attribution
+        query: Research question or topic
+        mode: "fast" (3 sources, cheaper) or "thorough" (15 sources, full synthesis)
+        max_sources: Override number of evidence sources (1-15)
     """
+    global _session_total_cost, _session_query_count
+
     try:
-        logger.info(f"Literature search: {query[:100]}...")
-        
-        # Progress: Starting research
-        await ctx.info(f"🔍 Starting literature search: {query[:60]}...")
-        await ctx.report_progress(progress=0.1, total=1.0, message="Initializing research query")
-        
-        # Create a copy of settings to avoid mutating the global settings object
-        # This follows PaperQA2 best practices for settings management
+        await ctx.info(f"Searching: {query[:60]}...")
+        await ctx.report_progress(progress=0.1, total=1.0)
+
         current_settings = settings.model_copy(deep=True)
-        
-        # Adjust settings based on parameters
-        if max_sources and 1 <= max_sources <= 15:
-            current_settings.answer.evidence_k = max_sources
-            logger.info(f"Adjusted evidence_k to {max_sources}")
-            
-        await ctx.report_progress(progress=0.2, total=1.0, message="Configuration complete")
-        
-        # Progress: Loading index
-        await ctx.report_progress(progress=0.3, total=1.0, message="Loading document index...")
-        
-        # Build/load the index first - this updates the settings object with the correct index
-        # Following PaperQA2 pattern from documentation snippet #35
-        built_index = await get_directory_index(settings=current_settings)
-        
-        # Verify index was loaded correctly
-        index_name = current_settings.get_index_name()
-        logger.info(f"Index loaded: {index_name}")
-        logger.info(f"Index files: {await built_index.index_files}")
-        
-        # Progress: Searching papers
-        await ctx.report_progress(progress=0.5, total=1.0, message="Searching academic papers...")
-        
-        # Use PaperQA2's async API with the settings object that now contains the loaded index
-        await ctx.report_progress(progress=0.7, total=1.0, message="Analyzing evidence and generating answer...")
-        
-        result = await agent_query(
-            query=query,
-            settings=current_settings  # This now contains the loaded index information
-        )
-        
-        # Progress: Formatting results
-        await ctx.report_progress(progress=0.9, total=1.0, message="Formatting research results...")
-        
-        # Format comprehensive response - use correct session access pattern
+
+        # Apply mode
+        if mode == "fast":
+            current_settings.answer.evidence_k = max_sources or 3
+            current_settings.answer.answer_max_sources = 3
+        else:
+            current_settings.answer.evidence_k = max_sources or 15
+            current_settings.answer.answer_max_sources = 10
+
+        await ctx.report_progress(progress=0.3, total=1.0)
+        await get_directory_index(settings=current_settings)
+
+        await ctx.report_progress(progress=0.5, total=1.0)
+        result = await agent_query(query=query, settings=current_settings)
+
         answer = result.session.answer
         cost = result.session.cost
         source_count = len(result.session.contexts)
-        
-        response = f"""# Literature Search Results
+
+        _session_total_cost += cost
+        _session_query_count += 1
+
+        # Session transparency
+        details = ""
+        if hasattr(result.session, "tool_history") and result.session.tool_history:
+            steps = result.session.tool_history
+            details += "\n**Agent steps**:\n" + "\n".join(
+                f"  {i}. {step}" for i, step in enumerate(steps, 1)
+            )
+        if hasattr(result.session, "token_counts") and result.session.token_counts:
+            details += f"\n**Tokens**: {result.session.token_counts}"
+
+        await ctx.report_progress(progress=1.0, total=1.0)
+
+        return f"""# Literature Search Results
 
 {answer}
 
 ---
-**Research Summary**: {source_count} evidence sources analyzed | **Query Cost**: ${cost:.4f}
-**Library Status**: Using pre-built index | **Embedding Model**: {settings.embedding}
+**Sources**: {source_count} | **Cost**: ${cost:.4f} | **Mode**: {mode}
+**Session**: ${_session_total_cost:.4f} across {_session_query_count} queries{details}
 """
-        
-        # Progress: Complete
-        await ctx.report_progress(progress=1.0, total=1.0, message="Research complete!")
-        await ctx.info(f"✅ Search completed: {source_count} sources, ${cost:.4f} cost")
-        
-        logger.info(f"Search completed: {source_count} sources, ${cost:.4f} cost")
-        return response
-        
+
     except Exception as e:
-        logger.error(f"Literature search failed: {e}")
-        return f"❌ Literature search failed: {str(e)}\n\nPlease check your API keys and document library."
-
-
-# Document indexing disabled - use build_index.py script instead
-# MCP servers have timeout issues with large document processing
-# 
-# @server.tool()
-# async def add_document(file_path: str, document_name: Optional[str] = None) -> str:
-#     """DISABLED: Use build_index.py script for document indexing instead."""
-#     return """❌ Document indexing via MCP is disabled
-# 
-# **Reason**: Large PDF processing causes MCP timeouts (>60 seconds)
-# 
-# **Solution**: Use the offline indexing script instead:
-# 
-# 1. Copy PDFs to: paperqa-mcp/papers/
-# 2. Run: python build_index.py
-# 3. Restart Claude Desktop
-# 4. Use search_literature tool
-# 
-# **Benefits**: Faster, more reliable, no timeout issues
-# """
-
-
-@server.tool()
-async def get_library_status() -> str:
-    """
-    Get current status of the research library.
-    
-    Returns comprehensive information about pre-built index, papers directory,
-    configuration, and system status.
-    
-    Returns:
-        Detailed library and system status
-    """
-    try:
-        # Check paper directory and index
-        paper_files = list(paper_directory.glob("*.pdf"))
-        index_dir = Path(settings.agent.index.index_directory)
-        index_files = list(index_dir.glob("*")) if index_dir.exists() else []
-        
-        # Calculate total storage
-        total_size = sum(pf.stat().st_size for pf in paper_files)
-        
-        if not paper_files:
-            return f"""📚 Research Library Status
-
-**Status**: No papers found
-**Paper Directory**: {paper_directory}
-**Index Status**: {len(index_files)} files in index
-
-**Setup Instructions**:
-1. Copy PDFs to: {paper_directory}
-2. Run: `python build_index.py`
-3. Restart Claude Desktop
-4. Use `search_literature` tool
-
-**Configuration**:
-- Embedding Model: {settings.embedding}
-- LLM Model: {settings.llm}
-- Index Directory: {index_dir}
-"""
-
-        # Status based on index availability
-        if not index_files:
-            status = "⚠️ Papers found but no index - run build_index.py"
-        else:
-            status = "✅ Ready for research"
-        
-        # Get paper names for display
-        paper_names = [pf.stem for pf in paper_files[:5]]
-        paper_summary = ", ".join(paper_names)
-        if len(paper_files) > 5:
-            paper_summary += f" and {len(paper_files) - 5} more..."
-        
-        response = f"""📚 Research Library Status
-
-**Library Statistics**:
-- Papers: {len(paper_files)} PDFs in directory
-- Index Files: {len(index_files)} files
-- Storage: {total_size / 1024 / 1024:.1f} MB
-- Status: {status}
-
-**Papers**: {paper_summary}
-
-**Configuration**:
-- Embedding Model: {settings.embedding}
-- LLM Model: {settings.llm}
-- Evidence Sources: {settings.answer.evidence_k} per query
-- Paper Directory: {paper_directory}
-- Index Directory: {index_dir}
-
-**Available Commands**:
-- `search_literature`: Research questions and topics with synthesis
-- `get_contexts`: Get raw text chunks without LLM paraphrasing  
-- `get_library_status`: Check system status
-- `configure_embedding`: Switch embedding models
-
-**Note**: Document indexing via MCP is disabled. Use `build_index.py` script instead.
-"""
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Status check failed: {e}")
-        return f"❌ Status check failed: {str(e)}"
+        logger.error(f"Search failed: {e}")
+        return f"Search failed: {e}"
 
 
 @server.tool()
 async def get_contexts(
     query: str,
     ctx: Context[ServerSession, None],
-    max_sources: Optional[int] = 10,
-    min_year: Optional[int] = None,
-    max_year: Optional[int] = None
+    max_sources: int = 10,
 ) -> str:
     """
-    Get raw search contexts without LLM synthesis.
-    
-    Returns direct text chunks from documents with exact page references,
-    avoiding double-paraphrasing and reducing costs from ~$0.06 to ~$0.001.
-    
+    Get raw text chunks matching a query. Uses the search index directly for
+    low-cost retrieval without full agent synthesis.
+
     Args:
-        query: Search query to find relevant contexts
-        max_sources: Maximum number of context chunks to return (1-20)
-        min_year: Earliest publication year to include
-        max_year: Latest publication year to include
-        
-    Returns:
-        Raw contexts with page references and source attribution
+        query: Search query
+        max_sources: Number of text chunks to return (1-20)
     """
+    global _session_total_cost, _session_query_count
+
     try:
-        logger.info(f"Context search: {query[:100]}...")
-        
-        # Progress: Starting search
-        await ctx.info(f"🔍 Retrieving raw contexts: {query[:60]}...")
-        await ctx.report_progress(progress=0.1, total=1.0, message="Initializing context search")
-        
-        # Create settings copy for context search
+        await ctx.info(f"Retrieving contexts: {query[:60]}...")
+
         current_settings = settings.model_copy(deep=True)
-        
-        # Adjust max_sources for context retrieval
-        if max_sources and 1 <= max_sources <= 20:
-            current_settings.answer.evidence_k = max_sources
-            logger.info(f"Adjusted evidence_k to {max_sources}")
-            
-        await ctx.report_progress(progress=0.2, total=1.0, message="Configuration complete")
-        
-        # Progress: Loading index
-        await ctx.report_progress(progress=0.3, total=1.0, message="Loading document index...")
-        
-        # Load the index
-        built_index = await get_directory_index(settings=current_settings)
-        
-        # Verify index was loaded correctly
-        index_name = current_settings.get_index_name()
-        logger.info(f"Index loaded: {index_name}")
-        
-        # Progress: Searching contexts
-        await ctx.report_progress(progress=0.5, total=1.0, message="Searching document contexts...")
-        
-        # Use the same agent_query but extract contexts before synthesis
-        result = await agent_query(
-            query=query,
-            settings=current_settings
-        )
-        
-        # Progress: Extracting contexts
-        await ctx.report_progress(progress=0.8, total=1.0, message="Extracting raw contexts...")
-        
-        # Extract raw contexts from the result
+        # Minimal agent run — just search + evidence, skip full synthesis
+        current_settings.answer.evidence_k = min(max_sources, 20)
+        current_settings.answer.answer_max_sources = min(max_sources, 20)
+        current_settings.answer.evidence_skip_summary = True
+
+        await get_directory_index(settings=current_settings)
+        result = await agent_query(query=query, settings=current_settings)
+
         contexts = result.session.contexts
         cost = result.session.cost
-        
+
+        _session_total_cost += cost
+        _session_query_count += 1
+
         if not contexts:
-            return f"""# Context Search Results
+            return f'No contexts found for: "{query}"'
 
-❌ No relevant contexts found for query: "{query}"
-
-**Search Summary**: 0 contexts found | **Query Cost**: ${cost:.4f}
-**Suggestion**: Try broader search terms or check if documents contain relevant content.
-"""
-        
-        # Format contexts with page references
-        formatted_contexts = []
+        formatted = []
         for i, context in enumerate(contexts[:max_sources], 1):
-            # Extract document info
+            text_name = context.text.name
             doc_info = context.text.doc
-            text_name = context.text.name  # This contains page info like "Tollmann2020 pages 224-225"
-            
-            # Format context with clear attribution
-            context_text = f"""## Context {i}
+            citation = getattr(doc_info, "formatted_citation", doc_info.docname)
 
-**Source**: {text_name}
-**Citation**: {doc_info.formatted_citation}
-**Relevance Score**: {context.score}
+            formatted.append(
+                f"## Context {i}\n\n"
+                f"**Source**: {text_name}\n"
+                f"**Citation**: {citation}\n"
+                f"**Score**: {context.score}\n\n"
+                f"{context.context}\n\n---"
+            )
 
-**Text**:
-{context.context}
-
----"""
-            formatted_contexts.append(context_text)
-        
-        response = f"""# Raw Context Search Results
+        return f"""# Raw Context Search Results
 
 Query: "{query}"
 
-{chr(10).join(formatted_contexts)}
+{chr(10).join(formatted)}
 
-**Search Summary**: {len(contexts)} contexts found | **Query Cost**: ${cost:.4f}
-**Library Status**: Using pre-built index | **Embedding Model**: {settings.embedding}
-
-**Usage**: These are raw text chunks without LLM paraphrasing. Use exact page references (e.g., "Tollmann2020 pages 224-225") to locate original text in source documents.
+**Contexts**: {len(contexts)} chunks | **Cost**: ${cost:.4f}
 """
-        
-        # Progress: Complete
-        await ctx.report_progress(progress=1.0, total=1.0, message="Context extraction complete!")
-        await ctx.info(f"✅ Context search completed: {len(contexts)} contexts, ${cost:.4f} cost")
-        
-        logger.info(f"Context search completed: {len(contexts)} contexts, ${cost:.4f} cost")
-        return response
-        
+
     except Exception as e:
         logger.error(f"Context search failed: {e}")
-        return f"❌ Context search failed: {str(e)}\n\nPlease check your API keys and document library."
+        return f"Context search failed: {e}"
 
 
 @server.tool()
-async def configure_embedding(
-    model_name: str = "voyage-ai/voyage-3-lite"
+async def get_library_status() -> str:
+    """Check what's in your research library and system status."""
+    try:
+        paper_files = list(paper_directory.glob("*.pdf"))
+        paper_files += list(paper_directory.glob("*.txt"))
+        paper_files += list(paper_directory.glob("*.html"))
+        paper_files += list(paper_directory.glob("*.docx"))
+
+        index_dir = Path(settings.agent.index.index_directory)
+        index_files = list(index_dir.glob("**/*")) if index_dir.exists() else []
+
+        total_size = sum(f.stat().st_size for f in paper_files if f.is_file())
+
+        if not paper_files:
+            return f"""Library Status
+
+No documents found in {paper_directory}
+
+Setup:
+1. Copy PDFs to: {paper_directory}
+2. Run: python paperqa-mcp/build_index.py
+3. Restart Claude Desktop
+
+Config: {settings.embedding} | {settings.llm}
+"""
+
+        has_index = bool(index_files)
+        status = "Ready" if has_index else "Documents found but no index — run build_index.py"
+
+        names = [f.stem for f in paper_files[:10]]
+        paper_list = "\n".join(f"  - {n}" for n in names)
+        if len(paper_files) > 10:
+            paper_list += f"\n  ... and {len(paper_files) - 10} more"
+
+        # Show indexing jobs if any
+        jobs_str = ""
+        if _indexing_jobs:
+            jobs_str = "\n\nIndexing Jobs:\n" + "\n".join(
+                f"  [{info['status']}] {info['filename']}"
+                for info in _indexing_jobs.values()
+            )
+
+        return f"""Library Status: {status}
+
+Documents: {len(paper_files)} ({total_size / 1024 / 1024:.1f} MB)
+{paper_list}
+
+Config:
+  Embedding: {settings.embedding}
+  LLM: {settings.llm}
+  Chunk size: {settings.parsing.reader_config.get('chunk_chars', 'default')}
+  MMR lambda: {settings.texts_index_mmr_lambda}
+  Index: {index_dir}
+
+Tools:
+  search_literature — synthesized answers (mode: fast/thorough)
+  get_contexts — raw text chunks, near-zero cost
+  add_document — add a book/document
+  remove_document — remove a document
+  get_library_status — this view
+
+Session: ${_session_total_cost:.4f} across {_session_query_count} queries{jobs_str}
+"""
+
+    except Exception as e:
+        return f"Status check failed: {e}"
+
+
+@server.tool()
+async def add_document(
+    file_path: str,
+    ctx: Context[ServerSession, None],
 ) -> str:
     """
-    Configure the embedding model used for semantic search.
-    
-    Supports the validated embedding models from our benchmarks.
-    Note: Existing documents will need to be re-added to use the new embedding model.
-    
+    Add a document to the library. Copies file and starts background indexing.
+
     Args:
-        model_name: Embedding model identifier
-                   Options: 'voyage-ai/voyage-3-lite' (recommended), 
-                           'gemini/gemini-embedding-001', 
-                           'text-embedding-3-small'
-    
-    Returns:
-        Configuration change confirmation
+        file_path: Absolute path to the file (PDF, TXT, HTML, DOCX)
     """
-    try:
-        # Get supported models from config
-        supported_models = get_supported_embedding_models()
-        
-        if model_name not in supported_models:
-            return f"""❌ Unsupported embedding model: {model_name}
+    source = Path(file_path)
+    if not source.exists():
+        return f"File not found: {file_path}"
 
-**Supported models**:
-- `voyage/voyage-3-large` (NEW: state-of-the-art, 9.74% better than OpenAI)
-- `voyage/voyage-3.5` (high performance alternative)
-- `voyage/voyage-3-lite` (budget: 6x cheaper than OpenAI)
-- `voyage/voyage-3` (balanced performance/cost)
-- `gemini/text-embedding-004` (free Google option)
-- `text-embedding-3-large` (OpenAI baseline)
+    valid_extensions = {".pdf", ".txt", ".md", ".html", ".docx"}
+    if source.suffix.lower() not in valid_extensions:
+        return f"Unsupported format: {source.suffix}. Supported: {', '.join(valid_extensions)}"
 
-**Recommendation**: Voyage models excel at academic content with 32K context support."""
+    dest = paper_directory / source.name
+    shutil.copy2(source, dest)
 
-        old_model = settings.embedding
-        settings.embedding = model_name
-        
-        logger.info(f"Embedding model changed: {old_model} → {model_name}")
-        
-        response = f"""✅ Embedding model updated
+    job_id = str(uuid.uuid4())[:8]
+    _indexing_jobs[job_id] = {"status": "indexing", "filename": source.name, "error": None}
 
-**Previous**: {old_model}
-**Current**: {model_name}
+    async def _index():
+        try:
+            idx_settings = settings.model_copy(deep=True)
+            await get_directory_index(settings=idx_settings)
+            _indexing_jobs[job_id]["status"] = "complete"
+        except Exception as e:
+            _indexing_jobs[job_id]["status"] = "failed"
+            _indexing_jobs[job_id]["error"] = str(e)
 
-**Performance Notes**:
-{chr(10).join(f"- {model}: {get_model_info(model)}" for model in supported_models[:4])}
-- All Voyage models: 32K context (vs OpenAI's 8K)
+    asyncio.create_task(_index())
 
-⚠️ **Important**: Re-add documents to use new embedding model for optimal search quality.
-
-**Recommendation**: Test search quality with new model before production use."""
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Embedding configuration failed: {e}")
-        return f"❌ Configuration failed: {str(e)}"
+    return f"'{source.name}' copied to library. Indexing in background (job: {job_id}).\nUse get_library_status to check progress."
 
 
-async def load_existing_papers():
-    """Use PaperQA2's built-in index management - no custom code needed"""
-    
-    try:
-        pdf_files = list(paper_directory.glob("*.pdf"))
-        if not pdf_files:
-            logger.info("No existing papers found in papers directory")
-            return
-        
-        logger.info(f"📚 Found {len(pdf_files)} papers in directory")
-        logger.info(f"🚀 PaperQA2 will handle indexing automatically through IndexSettings")
-        logger.info(f"✅ Index directory: {settings.agent.index.index_directory}")
-        logger.info(f"💰 Cost savings: PaperQA2 reuses existing embeddings automatically")
-        
-    except Exception as e:
-        logger.error(f"Error checking papers directory: {e}")
+@server.tool()
+async def remove_document(filename: str) -> str:
+    """
+    Remove a document from the library.
+
+    Args:
+        filename: Name of the file to remove (e.g. 'book.pdf')
+    """
+    target = paper_directory / filename
+    if not target.exists():
+        available = [f.name for f in paper_directory.iterdir() if f.is_file()]
+        return f"File not found: {filename}\nAvailable: {available}"
+
+    target.unlink()
+    return f"Removed '{filename}'. The index will refresh on next search."
+
+
+@server.tool()
+async def check_indexing_status() -> str:
+    """Check status of background document indexing jobs."""
+    if not _indexing_jobs:
+        return "No indexing jobs."
+
+    lines = []
+    for job_id, info in _indexing_jobs.items():
+        line = f"[{info['status']}] {info['filename']} (job: {job_id})"
+        if info.get("error"):
+            line += f"\n  Error: {info['error']}"
+        lines.append(line)
+
+    return "Indexing Jobs:\n" + "\n".join(lines)
 
 
 async def main():
-    """Main entry point for the PaperQA2 MCP server"""
-    logger.info(f"Starting PaperQA2 MCP Server v{paperqa.__version__}")
-    logger.info(f"Embedding model: {settings.embedding}")
-    logger.info(f"Paper directory: {paper_directory}")
-    
-    # Load existing papers on startup
-    await load_existing_papers()
-    
-    logger.info("PaperQA2 MCP Server ready - connecting to Claude Desktop...")
-    
-    # Run the FastMCP server
+    logger.info(f"PaperQA2 MCP Server v{paperqa.__version__}")
+    logger.info(f"Embedding: {settings.embedding}")
+    logger.info(f"Papers: {paper_directory}")
+
     await server.run()
 
 
 if __name__ == "__main__":
     try:
-        # FastMCP server.run() handles its own async event loop
-        # No need for asyncio.run() wrapper - this causes conflicts
-        
-        logger.info(f"Starting PaperQA2 MCP Server v{paperqa.__version__}")
-        logger.info(f"Embedding model: {settings.embedding}")
-        logger.info(f"Paper directory: {paper_directory}")
-        
-        # Run startup synchronously first
         import anyio
-        anyio.run(load_existing_papers)
-        
-        logger.info("PaperQA2 MCP Server ready - connecting to Claude Desktop...")
-        
-        # Run FastMCP server directly - it manages its own async loop
+        logger.info(f"Starting PaperQA2 MCP Server v{paperqa.__version__}")
         server.run()
-        
     except KeyboardInterrupt:
-        logger.info("Server shutdown requested")
+        logger.info("Server shutdown")
     except Exception as e:
         logger.error(f"Server error: {e}")
         raise

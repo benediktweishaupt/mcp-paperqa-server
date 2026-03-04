@@ -1,6 +1,6 @@
 """
-Configuration settings for PaperQA2 MCP Server
-Extracted from main server file for easier management
+Configuration settings for PaperQA2 MCP Server.
+Optimized for scanned books and cultural theory texts.
 """
 
 from pathlib import Path
@@ -10,83 +10,65 @@ from paperqa.settings import AgentSettings, IndexSettings, ParsingSettings, Answ
 
 def get_paperqa_settings(base_dir: Path = None) -> Settings:
     """
-    Get optimized PaperQA2 settings for academic research
-    
+    Get PaperQA2 settings optimized for scanned cultural/humanities books.
+
     Args:
-        base_dir: Base directory for papers and cache (defaults to current directory)
-    
+        base_dir: Base directory for papers and cache (defaults to paperqa-mcp/)
+
     Returns:
         Configured Settings object
     """
     if base_dir is None:
         base_dir = Path(__file__).parent
-        
+
     paper_directory = base_dir / "papers"
     cache_directory = base_dir / "cache"
-    
-    # Ensure directories exist
+
     paper_directory.mkdir(exist_ok=True)
     cache_directory.mkdir(exist_ok=True)
-    
-    # PaperQA2 Settings optimized for academic content
+
     settings = Settings(
-        # Use free local embedding model instead of paid Voyage AI
-        embedding="text-embedding-3-small",  # OpenAI embedding that works with existing API keys
-        
-        # LLM Configuration
+        # OpenAI embedding — works out of the box with existing API key
+        # Switch to "voyage/voyage-3" for +7.5% quality + 32K context
+        # (requires VOYAGE_API_KEY + payment method on Voyage dashboard)
+        embedding="text-embedding-3-small",
+
         llm="gpt-4o-2024-11-20",
-        temperature=0.0,  # Deterministic for academic accuracy
-        
-        # Built-in index management (no custom caching needed)
+        temperature=0.0,
+
+        # MMR diversity: 0.0 = max diversity, 1.0 = pure relevance (default)
+        # 0.5 balances relevance with diversity across chapters/books
+        texts_index_mmr_lambda=0.5,
+
         agent=AgentSettings(
             index=IndexSettings(
                 paper_directory=paper_directory,
                 index_directory=cache_directory / "index",
-                sync_with_paper_directory=True,  # Auto-detect file changes
+                sync_with_paper_directory=True,
             ),
-            rebuild_index=False  # Don't auto-rebuild unless explicitly requested
+            rebuild_index=False,
         ),
-        
-        # Academic-optimized parsing
+
+        # Tuned for scanned books with complex layouts
         parsing=ParsingSettings(
-            chunk_size=4000,  # Good balance for academic papers
-            overlap=200,      # Sufficient context preservation
-            use_doc_details=False,  # Skip external API calls to avoid SSL issues
+            # Books have longer arguments than papers — bigger chunks preserve flow
+            reader_config={"chunk_chars": 6000, "overlap": 400},
+            use_doc_details=False,  # No journal metadata for books
+            # Multimodal disabled — image enrichment makes LLM calls per image,
+            # which hits rate limits on low-tier OpenAI accounts.
+            # Set to True when on a higher OpenAI tier.
+            multimodal=False,
         ),
-        
-        # Quality-focused answer generation
+
         answer=AnswerSettings(
-            evidence_k=15,                   # More evidence for comprehensive answers
-            answer_max_sources=10,           # More detailed source attribution
-            max_concurrent_requests=2,       # Conservative for API limits
-            evidence_skip_summary=True,      # CRITICAL: Skip paraphrasing, return direct quotes
-        )
+            evidence_k=15,
+            answer_max_sources=10,
+            max_concurrent_requests=1,  # Low to avoid rate limits on low-tier OpenAI
+            evidence_skip_summary=True,  # Direct quotes, no paraphrasing
+        ),
+
+        # Keep batch size low for rate limit safety
+        batch_size=1,
     )
-    
+
     return settings
-
-
-def get_supported_embedding_models() -> list[str]:
-    """Get list of validated embedding models"""
-    return [
-        "voyage/voyage-3-large",        # State-of-the-art (current default)
-        "voyage/voyage-3.5",            # High performance alternative
-        "voyage/voyage-3-lite",         # Budget option (6x cheaper than OpenAI)
-        "voyage/voyage-3",              # Balanced performance/cost
-        "gemini/text-embedding-004",    # Free Google option
-        "text-embedding-3-large"        # OpenAI baseline
-    ]
-
-
-def get_model_info(model_name: str) -> str:
-    """Get performance information for a specific model"""
-    model_info = {
-        "voyage/voyage-3-large": "State-of-the-art (+9.74% vs OpenAI, 2x cheaper)",
-        "voyage/voyage-3.5": "High performance alternative",
-        "voyage/voyage-3-lite": "Budget champion (6x cheaper than OpenAI)",
-        "voyage/voyage-3": "Balanced option (+7.55% vs OpenAI, 2x cheaper)",
-        "gemini/text-embedding-004": "Free but limited features",
-        "text-embedding-3-large": "OpenAI baseline",
-    }
-    
-    return model_info.get(model_name, "Unknown model")

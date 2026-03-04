@@ -2,6 +2,18 @@
 
 ## 2026-03-04
 
+- Upgraded PaperQA2 from 5.x to 2026.3.3 (calendar versioning).
+- Recreated venv with Python 3.12 (was broken — Python 3.13 uninstalled).
+- Fixed `.mcp.json` paths (were pointing to old directory).
+- Updated `config.py` for new PaperQA2 API: `chunk_size`/`overlap` → `reader_config`.
+- Prepared Voyage embedding support (`voyage/voyage-3`, +7.5% quality, 32K context). Kept `text-embedding-3-small` as default — Voyage requires payment method on dashboard for usable rate limits.
+- Increased chunk size from 4000→6000 and overlap 200→400 for book-length texts.
+- Added MMR diversity (`texts_index_mmr_lambda=0.5`) to spread results across chapters.
+- Added `mode` parameter to `search_literature` — "fast" (3 sources) vs "thorough" (15 sources).
+- Added document management tools: `add_document`, `remove_document`, `check_indexing_status`.
+- Added session transparency: cumulative cost tracking, tool history, token counts in responses.
+- Removed broken `configure_embedding` tool (embedding is now a config-time decision).
+- Created `paperqa-mcp/build_index.py` (replaces `archive/utilities/build_index.py`, imports shared config).
 - Removed papers, cache, and index files from git tracking.
 - Renamed repo from `academic-research-assistant` to `mcp-paperqa-server`.
 
